@@ -25,6 +25,7 @@ DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", ""))
 TOKEN = os.environ.get("TOKEN", "")
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
 ABOUT_ME = os.environ.get("ABOUT_ME", "")
+LOCK = False
 
 time = time(hour=15, minute=0)
 
@@ -36,6 +37,14 @@ client = commands.Bot(
 
 queue = TopicQueue(preload = ['lexus', 'mechanical keyboards', 'neon genesis evangelion', 'spotify', 'flowers', 'interstellar'])
 # NOTE: END SETUP
+
+@client.check
+async def is_locked(ctx):
+    if client.is_owner(ctx.author):
+        return True
+
+    if LOCK:
+        return False
 
 @tasks.loop(time=time)
 async def send_thought():
@@ -66,6 +75,26 @@ async def remove(ctx, topic: str):
     topic = topic.lower()
     queue.remove_topic(topic)
     await ctx.send(info_msg(f"Added {topic} to queue."))
+
+@client.command()
+@commands.is_owner()
+async def lock(ctx):
+    global LOCK 
+    if LOCK:
+        await ctx.send(cmd_error("Commands already locked."))
+    else:
+        LOCK = True
+        await ctx.send(info_msg("Commands are now locked."))
+
+@client.command()
+@commands.is_owner()
+async def unlock(ctx):
+    global LOCK
+    if not LOCK:
+        await ctx.send(cmd_error("Commands are already unlocked."))
+    else:
+        LOCK = False
+        await ctx.send(info_msg("Commands are now unlocked."))
 
 # Redefined help command.
 @client.command()
