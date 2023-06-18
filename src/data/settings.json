@@ -1,0 +1,29 @@
+{
+  "request":
+  {
+    "options": [
+      {
+        "name": "topic",
+        "description": "The topic to add, please keep this under 50 characters."
+      }
+    ],
+    "description": "Add a topic to the queue."
+  },
+
+  "topics": 
+  {
+    "options": null,
+    "description": "Lists all topics in the queue"
+  },
+
+  "remove":
+  {
+    "options": [
+      {
+        "name": "topic",
+        "description": "The topic to remove, please keep this under 50 characters."
+      }
+    ],
+    "description": "Remove a topic from the queue."
+  }
+}
