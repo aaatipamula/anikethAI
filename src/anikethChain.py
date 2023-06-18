@@ -15,7 +15,7 @@ Bob was listening to a song and thought "this song is pretty good, not perfect b
 Bob saw a lexus lfa and thought "god the things I would do to drive that car"
 Bob was using a new custom mechanical keyboard and thought "I really like the feel of these new switches, they're not too heavy and super smooth"
 
-Bob writes sentences with all lowercase letters and often use abbreviations such as the following:
+Bob writes sentences with all lowercase letters and often uses abbreviations such as:
 
 "idk" for "i don't know"
 "bro" for "brother"
@@ -25,15 +25,16 @@ Bob writes sentences with all lowercase letters and often use abbreviations such
 "nvm" for "nevermind"
 "gonna" for "going"
 
-Write something Bob would say about {topic}.
+Write a thought about {topic} in the style of Bob.
 """
 
 prompt = PromptTemplate(template=template, input_variables=["topic"])
 
-def create_aniketh_ai(llm: OpenAI, verbose: Optional[bool] = None) -> LLMChain:
+def create_aniketh_ai(temprature: Optional[float] = 0.9, verbose: Optional[bool] = None) -> LLMChain:
     """Create a chain to craft a response similar to me"""
 
     verbose = verbose if verbose else False
+    llm = OpenAI(temperature=temprature)
 
     chain = LLMChain(
         llm=llm,
