@@ -1,15 +1,17 @@
+import os
 import discord
 import logging
-import os
 import traceback as tb
 from datetime import time
-from os.path import join, dirname
 from dotenv import load_dotenv
+from os.path import join, dirname
 from discord.abc import PrivateChannel
 from discord.ext import commands, tasks
 from anikethChain import create_aniketh_ai
 from ext import cmd_error, help_command, bot_error, info_msg, topic_msg
+from topicQueue import FullQueue, InQueue, EmptyQueue, OutQueue, LengthError, TopicQueue
 
+# NOTE: SETUP
 # Declaring gateway intents, discord.py >= 2.0 feature
 intent = discord.Intents().default()
 intent.message_content = True
@@ -32,20 +34,14 @@ client = commands.Bot(
         help_command=None
     )
 
-# NOTE: temp solution
-topics: set[str] = set()
-topics_backup = {'lexus', 'mechanical keyboards', 'neon genesis evangelion', 'spotify', 'flowers', 'interstellar'}
+queue = TopicQueue(preload = ['lexus', 'mechanical keyboards', 'neon genesis evangelion', 'spotify', 'flowers', 'interstellar'])
+# NOTE: END SETUP
 
 @tasks.loop(time=time)
 async def send_thought():
     chain = create_aniketh_ai()
-    backup_warn = None
-    if len(topics) >= 1:
-        topic = topics.pop()
-    else:
-        topic = topics_backup.pop()
-        backup_warn = "\n\n*This message was generated using a backup topic, please request more topics!*"
-    message = chain.predict(topic=topic) + backup_warn if backup_warn else ""
+    topic = queue.pick_topic()
+    message = chain.predict(topic=topic)
     channel = client.get_channel(DUMP_CHANNEL)
     if channel and not isinstance(channel, PrivateChannel):
         await channel.send(message)
@@ -57,54 +53,26 @@ async def on_ready():
 
 @client.command()
 async def request(ctx, topic: str):
-
-    if len(topic) > 50:
-        await ctx.send(cmd_error("Please keep topics under 50 characters."))
-        return
-    elif len(topics) > 30:
-        await ctx.send(cmd_error("There are more than 30 topics in queue, please request a topic after one has been used."))
-        return
-
     topic = topic.lower()
-    
-    if topic in topics:
-        await ctx.send(info_msg("Topic is already in queue."))
-    else:
-        topics.add(topic)
-        await ctx.send(info_msg(f"Added {topic} to queue."))
+    queue.add_topic(topic)
+    await ctx.send(info_msg(f"Added {topic} to queue."))
 
 @client.command(name="topics")
 async def list_topics(ctx):
-
-    if len(topics) >= 1:
-        await ctx.send(topic_msg(topics))
-    else:
-        await ctx.send(info_msg("There are no topics in queue."))
+    await ctx.send(topic_msg(queue.topics))
 
 @client.command()
 async def remove(ctx, topic: str):
-
     topic = topic.lower()
+    queue.remove_topic(topic)
+    await ctx.send(info_msg(f"Added {topic} to queue."))
 
-    if len(topic) > 50:
-        await ctx.send(cmd_error("Please keep topics under 50 characters."))
-        return
-    if len(topics) <= 0:
-        await ctx.send(cmd_error("There are not any topics in the queue, please "))
-
-    if topic not in topics:
-        await ctx.send(info_msg(f"The topic {topic} does not exist in the queue."))
-    else:
-        topics.remove(topic)
-        await ctx.send(info_msg(f"Added {topic} to queue."))
-
-
-# Redefined help command
+# Redefined help command.
 @client.command()
 async def help(ctx, opt="general"):
     await ctx.send(embed=help_command(opt, ctx.prefix, ABOUT_ME))
 
-# General error handling for all commands, if a command does not have error handling explicitly called this function will handle all errors.
+# General error handling for all commands.
 @client.event
 async def on_command_error(ctx, err):
     if isinstance(err, commands.CommandNotFound):
@@ -113,22 +81,26 @@ async def on_command_error(ctx, err):
     elif isinstance(err, commands.errors.MissingRequiredArgument):
         await ctx.send(embed=bot_error(str(err)))
 
+    elif isinstance(err, LengthError):
+        await ctx.send(cmd_error("Please keep topics under 50 characters."))
+
+    elif isinstance(err, FullQueue):
+        await ctx.send(cmd_error("There are more than 30 topics in queue, please request a topic after one has been used."))
+
+    elif isinstance(err, InQueue):
+        await ctx.send(info_msg("Topic is already in queue."))
+
+    elif isinstance(err, EmptyQueue):
+        await ctx.send(cmd_error("There are not any topics in the queue, please add some topics."))
+
+    elif isinstance(err, OutQueue):
+        await ctx.send(cmd_error(f"Topic does not exist in the queue."))
+
     else:
         print(err)
         err_channel = client.get_channel(DUMP_CHANNEL)
         if err_channel:
             await err_channel.send(f"```Error: {err}\nMessage: {ctx.message.content}\nAuthor: {ctx.author}\nServer: {ctx.message.guild}\nLink: {ctx.message.jump_url}\nTraceback: {''.join(tb.format_exception(None, err, err.__traceback__))}```")
-
-# A function that runs on every message sent.
-@client.event
-async def on_message(message):
-
-    # Ignores if user is client (self), generally good to have in this function.
-    if message.author == client.user:
-        return
-
-    # Process any commands before on message event is processed
-    await client.process_commands(message)
 
 if __name__ == '__main__':
     client.run(TOKEN, log_handler=handler)
