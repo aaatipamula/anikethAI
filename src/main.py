@@ -43,8 +43,7 @@ async def is_locked(ctx):
     if client.is_owner(ctx.author):
         return True
 
-    if LOCK:
-        return False
+    return not LOCK
 
 @tasks.loop(time=time)
 async def send_thought():
