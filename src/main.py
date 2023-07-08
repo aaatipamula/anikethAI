@@ -1,4 +1,5 @@
 import os
+import sys
 import discord
 import logging
 import traceback as tb
@@ -17,7 +18,7 @@ from topicQueue import FullQueue, InQueue, EmptyQueue, OutQueue, LengthError, To
 intent = discord.Intents().default()
 intent.message_content = True
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='a')
+handler = logging.StreamHandler(stream=sys.stdout)
 
 dotenv_path = join(dirname(__file__), 'data', '.env')
 load_dotenv(dotenv_path=dotenv_path)
@@ -69,16 +70,16 @@ async def on_ready():
     send_thought.start()
 
 @client.command()
-async def request(ctx, *topic):
+async def request(ctx, *, topic):
     global queue
-    topic = " ".join(topic).lower()
+    topic = topic.lower()
     queue.add_topic(topic)
     await ctx.send(embed=info_msg(f"Added {topic} to queue."))
 
 @client.command()
-async def remove(ctx, *topic):
+async def remove(ctx, *, topic):
     global queue
-    topic = " ".join(topic).lower()
+    topic = topic.lower()
     queue.remove_topic(topic)
     await ctx.send(embed=info_msg(f"Removed {topic} from queue."))
 
