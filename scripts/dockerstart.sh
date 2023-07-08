@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [$1 = '']
+if [ $1 = '' ]
 then
     echo 'Please enter a name for the Docker image/container!'
     exit 0
