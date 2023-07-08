@@ -1,17 +1,24 @@
 from typing import Iterable, Optional
+from discord.ext.commands import CommandError
 from random import choice
 
-class QueueError(BaseException): ...
+class QueueError(CommandError):
+    pass
 
-class EmptyQueue(QueueError): ...
+class EmptyQueue(QueueError):
+    pass
 
-class FullQueue(QueueError): ...
+class FullQueue(QueueError):
+    pass
 
-class InQueue(QueueError): ...
+class InQueue(QueueError):
+    pass
 
-class OutQueue(QueueError): ...
+class OutQueue(QueueError):
+    pass
 
-class LengthError(ValueError): ...
+class LengthError(QueueError):
+    pass
 
 class TopicQueue:
     """A simple wrapper to make queueing topics easier."""
@@ -25,7 +32,7 @@ class TopicQueue:
         """The topics property."""
         if not self._backup_topics:
             raise EmptyQueue
-        return self._topics
+        return self._backup_topics
 
     @property
     def topics(self) -> list[str]:
@@ -37,18 +44,16 @@ class TopicQueue:
     def add_topic(self, topic: str) -> None:
         if len(topic) > 50:
             raise LengthError
-        elif len(self._topics) > 30:
-            raise FullQueue
         elif topic in self._topics:
             raise InQueue
+        elif len(self._topics) > 30:
+            raise FullQueue
 
         self._topics.append(topic)
 
     def remove_topic(self, topic: str) -> None:
         if len(topic) > 50:
             raise LengthError
-        elif len(self._topics) <= 0:
-            raise EmptyQueue
         elif topic not in self._topics:
             raise OutQueue
 
