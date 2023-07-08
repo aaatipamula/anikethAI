@@ -3,6 +3,7 @@ import discord
 import logging
 import traceback as tb
 from datetime import time
+from typing import Optional
 from dotenv import load_dotenv
 from os.path import join, dirname
 from discord.abc import PrivateChannel
@@ -28,27 +29,35 @@ ABOUT_ME = os.environ.get("ABOUT_ME", "")
 LOCK = False
 
 time = time(hour=15, minute=0)
-
 client = commands.Bot(
-        command_prefix=COMMAND_PREFIX if COMMAND_PREFIX else ".", 
-        intents=intent, case_insensitive=True, 
-        help_command=None
-    )
+    command_prefix=COMMAND_PREFIX if COMMAND_PREFIX else ".", 
+    intents=intent, case_insensitive=True, 
+    help_command=None
+)
 
-queue = TopicQueue(preload = ['lexus', 'mechanical keyboards', 'neon genesis evangelion', 'spotify', 'flowers', 'interstellar'])
+preload_topics = [
+    'lexus', 
+    'mechanical keyboards', 
+    'neon genesis evangelion', 
+    'python the coding language', 
+    'flowers', 
+    'interstellar the movie'
+]
+queue = TopicQueue(preload=preload_topics)
 # NOTE: END SETUP
 
 @client.check
 async def is_locked(ctx):
-    if client.is_owner(ctx.author):
+    if await client.is_owner(ctx.author):
         return True
 
     return not LOCK
 
 @tasks.loop(time=time)
-async def send_thought():
+async def send_thought(topic: Optional[str] = None):
+    global queue
     chain = create_aniketh_ai()
-    topic = queue.pick_topic()
+    topic = topic if topic else queue.pick_topic()
     message = chain.predict(topic=topic)
     channel = client.get_channel(DUMP_CHANNEL)
     if channel and not isinstance(channel, PrivateChannel):
@@ -60,40 +69,48 @@ async def on_ready():
     send_thought.start()
 
 @client.command()
-async def request(ctx, topic: str):
-    topic = topic.lower()
+async def request(ctx, *topic):
+    global queue
+    topic = " ".join(topic).lower()
     queue.add_topic(topic)
-    await ctx.send(info_msg(f"Added {topic} to queue."))
+    await ctx.send(embed=info_msg(f"Added {topic} to queue."))
+
+@client.command()
+async def remove(ctx, *topic):
+    global queue
+    topic = " ".join(topic).lower()
+    queue.remove_topic(topic)
+    await ctx.send(embed=info_msg(f"Removed {topic} from queue."))
 
 @client.command(name="topics")
 async def list_topics(ctx):
-    await ctx.send(topic_msg(queue.topics))
+    global queue
+    await ctx.send(embed=topic_msg(queue.topics))
 
 @client.command()
-async def remove(ctx, topic: str):
-    topic = topic.lower()
-    queue.remove_topic(topic)
-    await ctx.send(info_msg(f"Added {topic} to queue."))
+@commands.is_owner()
+async def thought(ctx, topic: Optional[str] = None):
+    await send_thought(topic)
 
 @client.command()
 @commands.is_owner()
 async def lock(ctx):
     global LOCK 
     if LOCK:
-        await ctx.send(cmd_error("Commands already locked."))
+        await ctx.send(embed=cmd_error("Commands already locked."))
     else:
         LOCK = True
-        await ctx.send(info_msg("Commands are now locked."))
+        await ctx.send(embed=info_msg("Commands are now locked."))
 
 @client.command()
 @commands.is_owner()
 async def unlock(ctx):
     global LOCK
     if not LOCK:
-        await ctx.send(cmd_error("Commands are already unlocked."))
+        await ctx.send(embed=cmd_error("Commands are already unlocked."))
     else:
         LOCK = False
-        await ctx.send(info_msg("Commands are now unlocked."))
+        await ctx.send(embed=info_msg("Commands are now unlocked."))
 
 # Redefined help command.
 @client.command()
@@ -110,19 +127,25 @@ async def on_command_error(ctx, err):
         await ctx.send(embed=bot_error(str(err)))
 
     elif isinstance(err, LengthError):
-        await ctx.send(cmd_error("Please keep topics under 50 characters."))
+        await ctx.send(embed=cmd_error("Please keep topics under 50 characters."))
 
     elif isinstance(err, FullQueue):
-        await ctx.send(cmd_error("There are more than 30 topics in queue, please request a topic after one has been used."))
+        await ctx.send(embed=cmd_error("There are more than 30 topics in queue, please request a topic after one has been used."))
 
     elif isinstance(err, InQueue):
-        await ctx.send(info_msg("Topic is already in queue."))
+        await ctx.send(embed=info_msg("Topic is already in queue."))
 
     elif isinstance(err, EmptyQueue):
-        await ctx.send(cmd_error("There are not any topics in the queue, please add some topics."))
+        await ctx.send(embed=cmd_error("There are not any topics in the queue, please add some topics."))
 
     elif isinstance(err, OutQueue):
-        await ctx.send(cmd_error(f"Topic does not exist in the queue."))
+        await ctx.send(embed=cmd_error(f"Topic does not exist in the queue."))
+
+    elif isinstance(err, commands.errors.CheckFailure):
+        await ctx.seend(embed=cmd_error("Commands are currently locked."))
+
+    elif isinstance(err, commands.errors.NotOwner):
+        await ctx.seend(embed=cmd_error("You are not allowed to use this command."))
 
     else:
         print(err)
