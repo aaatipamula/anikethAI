@@ -6,7 +6,7 @@ import discord
 
 commands = json.load(open(join(dirname(__file__), 'data', 'commands.json')))
 
-embed_color = 0xe398be
+embed_color = 0x5b7da6
 error_color = 0x991a2d
 
 # embed for bot errors
@@ -23,17 +23,18 @@ def info_msg(desc: str):
     return a
 
 def topic_msg(topics: Iterable[str]):
-    a = discord.Embed(color=embed_color, title="Topics in queue:")
-    for topic in topics:
-        a.add_field(name=topic, value="\u200b", inline=False)
-
+    desc = "\n".join(topics)
+    a = discord.Embed(color=embed_color, title="Topics in queue:", description=desc)
+    return a 
 
 # format the help embed for specific command
 def format_command(name: str, command: dict) -> discord.Embed:
     opts = [option['name'] for option in command['options']]
-    cmdEmbed = discord.Embed(title=f"{name} ({', '.join(opts)})", 
-                             color=embed_color, 
-                             description=command["description"])
+    cmdEmbed = discord.Embed(
+        title=f"{name} ({', '.join(opts)})", 
+         color=embed_color, 
+         description=command["description"]
+    )
     if command["options"]:
         for option in command["options"]:
             cmdEmbed.add_field(name=option["name"], value=option["description"])
