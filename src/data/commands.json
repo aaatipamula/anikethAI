@@ -1,29 +1,66 @@
 {
-  "request":
-  {
-    "options": [
+  "request": {
+    "hidden": false,
+    "cmd_desc": "Add topic(s) to the topic queue.",
+    "params": [
       {
         "name": "topic",
-        "description": "The topic to add, please keep this under 50 characters."
+        "optional": false,
+        "type": "positional",
+        "data_type": "string",
+        "description": "The topic to add in english.",
+        "notes": "Please keep topic under 50 characters."
       }
     ],
-    "description": "Add a topic to the queue."
+    "usage": [
+      "`.request Michael Jackson`",
+      "`.request The Shining`"
+    ]
   },
 
-  "topics": 
-  {
-    "options": null,
-    "description": "Lists all topics in the queue"
+
+  "topics": {
+    "hidden": false,
+    "cmd_desc": "Lists all topics in queue.",
+    "params": null,
+    "usage": [".topics"]
   },
 
-  "remove":
-  {
-    "options": [
+  
+  "rm": {
+    "hidden": false,
+    "cmd_desc": "Remove a topic from the queue.",
+    "params": [
+      {
+        "name": "topics",
+        "optional": true,
+        "type": "positional",
+        "data_type": "list of numbers",
+        "description": "Which topics to remove from queue by number in the queue.",
+        "notes": "This can be one or multiple topics."
+      },
       {
         "name": "topic",
-        "description": "The topic to remove, please keep this under 50 characters."
+        "optional": true,
+        "type": "flag",
+        "data_type": "string",
+        "description": "The topic to remove.",
+        "notes": "Please keep this under 50 characters."
+      },
+      {
+        "name": "span",
+        "optional": true,
+        "type": "flag",
+        "data_type": "two numbers",
+        "description": "A range of topics to remove from the queue.",
+        "notes": null
       }
     ],
-    "description": "Remove a topic from the queue."
+    "usage": [
+      "`.rm 1`",
+      "`.rm 1 4 2`",
+      "`.rm range: 1 4`",
+      "`.rm topic: Michael Jackson`"
+    ]
   }
 }
