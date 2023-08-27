@@ -23,7 +23,7 @@
     "hidden": false,
     "cmd_desc": "Lists all topics in queue.",
     "params": null,
-    "usage": [".topics"]
+    "usage": ["`.topics`"]
   },
 
   
@@ -62,5 +62,98 @@
       "`.rm range: 1 4`",
       "`.rm topic: Michael Jackson`"
     ]
+  },
+
+
+  "thought": {
+    "hidden": true,
+    "cmd_desc": "Send a thought on a topic.",
+    "params": [
+      {
+        "name": "topic",
+        "optional": true,
+        "type": "positional",
+        "data_type": "string",
+        "description": "The topic to send a thought on.",
+        "notes": "Please keep this under 50 characters."
+      }
+    ],
+    "usage": [
+      "`.thought`",
+      "`.thought Einstein's Theory of Relativity`"
+    ]
+  },
+
+
+  "admin": {
+    "hidden": true,
+    "cmd_desc": "Displays a message which gives the status of the bot.",
+    "params": null,
+    "usage": ["`.admin`"]
+  },
+
+
+  "admin-startl": {
+    "hidden": true,
+    "cmd_desc": "Starts the daily message loop.",
+    "params": null,
+    "usage": ["`.admin startl`"]
+  },
+
+
+  "admin-stopl": {
+    "hidden": true,
+    "cmd_desc": "Starts the daily message loop.",
+    "params": null,
+    "usage": ["`.admin stopl`"]
+  },
+
+
+  "admin-statusl": {
+    "hidden": true,
+    "cmd_desc": "Displays a message which gives the status of the daily message loop.",
+    "params": null,
+    "usage": ["`.admin statusl`"]
+  },
+
+
+  "admin-logs": {
+    "hidden": true,
+    "cmd_desc": "Displays the logs for the bot.",
+    "params": [
+      {
+        "name": "lines",
+        "optional": true,
+        "type": "positional",
+        "data_type": "number",
+        "description": "The number of lines you would like displayed from the logs.",
+        "notes": "This defaults to 10 lines."
+      }
+    ],
+    "usage": ["`.admin logs`"]
+  },
+
+
+  "admin-kill": {
+    "hidden": true,
+    "cmd_desc": "Completely shuts down the bot. Must react to the bot message with <:L_:1136812895859134555> within 10 seconds.",
+    "params": null,
+    "usage": ["`.admin kill`"]
+  },
+
+
+  "admin-lock": {
+    "hidden": true,
+    "cmd_desc": "Locks all commands.",
+    "params": null,
+    "usage": ["`.admin lock`"]
+  },
+
+
+  "admin-unlock": {
+    "hidden": true,
+    "cmd_desc": "Unlocks all commands.",
+    "params": null,
+    "usage": ["`.admin unlock`"]
   }
 }

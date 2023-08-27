@@ -1,17 +1,28 @@
 import os
 import sys
+import traceback as tb
+from typing import Optional, Tuple
+import asyncio
+from datetime import datetime
+
+from anikethChain import create_aniketh_ai
+from ext import (
+    cmd_error,
+    help_command,
+    bot_error,
+    info_msg,
+    topic_msg,
+    loop_status,
+    admin_dashboard
+)
+from topicQueue import QueueError, TopicQueue
+
 import discord
 import logging
-import traceback as tb
 from datetime import time
-from typing import Literal, Optional, Union, Tuple
 from dotenv import load_dotenv
 from os.path import join, dirname
-from discord.abc import PrivateChannel
 from discord.ext import commands, tasks
-from anikethChain import create_aniketh_ai
-from ext import cmd_error, help_command, bot_error, info_msg, topic_msg
-from topicQueue import QueueError, IndexError, TopicQueue
 
 # NOTE: SETUP
 # Declaring gateway intents, discord.py >= 2.0 feature
@@ -28,6 +39,7 @@ TOKEN = os.environ.get("TOKEN", "")
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
 ABOUT_ME = os.environ.get("ABOUT_ME", "")
 LOCK = False
+START_DATETIME = datetime.now()
 
 time = time(hour=15, minute=0)
 client = commands.Bot(
@@ -62,12 +74,12 @@ async def is_locked(ctx):
 @tasks.loop(time=time)
 async def send_thought(topic: Optional[str] = None):
     global queue
-    chain = create_aniketh_ai()
-    topic = topic if topic else queue.pick_topic()
-    message = chain.predict(topic=topic)
     channel = client.get_channel(DUMP_CHANNEL)
-    if channel and not isinstance(channel, PrivateChannel):
-        await channel.send(message)
+    async with channel.typing(): # Known type checking error
+        chain = create_aniketh_ai()
+        topic = topic if topic else queue.pick_topic()
+        message = chain.predict(topic=topic)
+    await channel.send(message) # Known type checking error
 
 @client.event
 async def on_ready():
@@ -118,8 +130,63 @@ async def list_topics(ctx):
 async def thought(ctx, topic: Optional[str] = None):
     await send_thought(topic)
 
+# Redefined help command.
 @client.command()
+async def help(ctx, opt="general"):
+    is_owner = await client.is_owner(ctx.author)
+    embeds = help_command(opt, ctx.prefix, ABOUT_ME, is_owner=is_owner)
+    await ctx.send(embeds=embeds)
+
+###################################
+# Admin Commands and Sub Commands #
+###################################
+
+@client.group()
 @commands.is_owner()
+async def admin(ctx):
+    if not ctx.invoked_subcommand:
+        embed = await admin_dashboard(client, START_DATETIME)
+        await ctx.send(embed=embed)
+
+@admin.command(name="stopl")
+async def stop_loop(ctx):
+    if send_thought.is_running():
+        send_thought.cancel()
+    else:
+        await ctx.send(embed=cmd_error("Task is already stopped."))
+        return
+    await ctx.send(embed=info_msg("Stopped sending daily thoughts."))
+
+@admin.command(name="startl")
+async def start_loop(ctx):
+    if send_thought.is_running():
+        await ctx.send(embed=cmd_error("Task is already running."))
+        return
+    else:
+        send_thought.start()
+    await ctx.send(embed=info_msg("Started sending daily thoughts."))
+
+@admin.command(name="statusl")
+async def status_loop(ctx):
+    embed = loop_status(send_thought.is_running(), send_thought.next_iteration) # Known type checking error
+    await ctx.send(embed=embed)
+
+@admin.command(name="kill")
+async def kill_bot(ctx):
+    await ctx.send(f"NOOOOO PLEASE {client.get_emoji(1145147159260450907)}") # :cri: emoji
+
+    def check(reaction, user):
+        return client.is_owner(user) and reaction.emoji == client.get_emoji(1136812895859134555) #:L_: emoji
+
+    try:
+        await client.wait_for("reaction_add", timeout=10.0, check=check)
+    except asyncio.TimeoutError:
+        await ctx.send(client.get_emoji(994378239675990029))
+    else:
+        await ctx.send(client.get_emoji(1145090024333918320))
+        exit()
+
+@admin.command()
 async def lock(ctx):
     global LOCK
     if LOCK:
@@ -128,8 +195,7 @@ async def lock(ctx):
         LOCK = True
         await ctx.send(embed=info_msg("Commands are now locked."))
 
-@client.command()
-@commands.is_owner()
+@admin.command()
 async def unlock(ctx):
     global LOCK
     if not LOCK:
@@ -138,11 +204,6 @@ async def unlock(ctx):
         LOCK = False
         await ctx.send(embed=info_msg("Commands are now unlocked."))
 
-# Redefined help command.
-@client.command()
-async def help(ctx, opt="general"):
-    is_owner = await client.is_owner(ctx.author)
-    await ctx.send(embed=help_command(opt, ctx.prefix, ABOUT_ME, is_owner=is_owner))
 
 # General error handling for all commands.
 # NOTE: Change this soon
@@ -161,7 +222,7 @@ async def on_command_error(ctx, err):
         await ctx.send(embed=cmd_error(str(err)))
 
     elif isinstance(err, commands.errors.CheckFailure):
-        await ctx.send(embed=cmd_error("Commands are currently locked."))
+        await ctx.send(embed=cmd_error("You are not allowed to use this command."))
 
     elif isinstance(err, commands.errors.NotOwner):
         await ctx.send(embed=cmd_error("You are not allowed to use this command."))
@@ -173,8 +234,13 @@ async def on_command_error(ctx, err):
         print(err)
         err_channel = client.get_channel(DUMP_CHANNEL)
         if err_channel:
-            await err_channel.send(f"```Error: {err}\nMessage: {ctx.message.content}\nAuthor: {ctx.author}\nServer: {ctx.message.guild}\nLink: {ctx.message.jump_url}\nTraceback: {''.join(tb.format_exception(None, err, err.__traceback__))}```")
-            return
+            # Known type checking error
+            await err_channel.send(f"```Error: {err}\n\
+                Message: {ctx.message.content}\n\
+                Author: {ctx.author}\n\
+                Server: {ctx.message.guild}\n\
+                Link: {ctx.message.jump_url}\n\
+                Traceback: {''.join(tb.format_exception(None, err, err.__traceback__))}```")
 
 if __name__ == '__main__':
     client.run(TOKEN, log_handler=handler)
