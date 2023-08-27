@@ -117,23 +117,6 @@
   },
 
 
-  "admin-logs": {
-    "hidden": true,
-    "cmd_desc": "Displays the logs for the bot.",
-    "params": [
-      {
-        "name": "lines",
-        "optional": true,
-        "type": "positional",
-        "data_type": "number",
-        "description": "The number of lines you would like displayed from the logs.",
-        "notes": "This defaults to 10 lines."
-      }
-    ],
-    "usage": ["`.admin logs`"]
-  },
-
-
   "admin-kill": {
     "hidden": true,
     "cmd_desc": "Completely shuts down the bot. Must react to the bot message with <:L_:1136812895859134555> within 10 seconds.",

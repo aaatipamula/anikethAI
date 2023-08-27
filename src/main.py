@@ -50,10 +50,8 @@ client = commands.Bot(
 
 preload_topics = [
     'neon genesis evangelion',
-    'stuff',
-    'more stuff',
-    'blah',
-    'word'
+    'relationships',
+    'san francisco'
 ]
 
 # Convert Flag arguments for the remove command
@@ -79,7 +77,7 @@ async def send_thought(topic: Optional[str] = None):
         chain = create_aniketh_ai()
         topic = topic if topic else queue.pick_topic()
         message = chain.predict(topic=topic)
-    await channel.send(message) # Known type checking error
+    await channel.send(f"**Topic**: {topic}\n" + message) # Known type checking error
 
 @client.event
 async def on_ready():
