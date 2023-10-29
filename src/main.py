@@ -228,6 +228,7 @@ async def on_message(message: discord.Message):
             mem = get_user_mem(message.author.id)
             chain = create_aniketh_ai(mem)
             msg = chain.predict(user_message=message.clean_content)
+            dump_user_mem(message.author.id, mem)
         await message.channel.send(msg)
 
 # General error handling for all commands.

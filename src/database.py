@@ -17,7 +17,7 @@ from sqlalchemy.orm import (
 db_path = join(dirname(__file__), 'data', 'UserMem.db')
 
 engine = create_engine(
-    "sqlite://" + db_path
+    "sqlite:///" + db_path
 )
 
 MEM_LEN = 7
