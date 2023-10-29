@@ -5,7 +5,12 @@ from typing import Optional, Tuple
 import asyncio
 from datetime import datetime
 
+from sqlalchemy.engine import create
+
+
 from anikethChain import create_aniketh_ai
+from topicQueue import QueueError, TopicQueue
+from database import BaseModel, dump_user_mem, get_user_mem, engine
 from ext import (
     cmd_error,
     help_command,
@@ -15,7 +20,6 @@ from ext import (
     loop_status,
     admin_dashboard
 )
-from topicQueue import QueueError, TopicQueue
 
 import discord
 import logging
@@ -23,6 +27,7 @@ from datetime import time
 from dotenv import load_dotenv
 from os.path import join, dirname
 from discord.ext import commands, tasks
+from langchain.memory import ConversationBufferWindowMemory
 
 # NOTE: SETUP
 # Declaring gateway intents, discord.py >= 2.0 feature
@@ -41,7 +46,8 @@ ABOUT_ME = os.environ.get("ABOUT_ME", "")
 LOCK = False
 START_DATETIME = datetime.now()
 
-time = time(hour=15, minute=0)
+# how many hours to wait inbetween loops
+waitTime = time(hour=15, minute=0)
 client = commands.Bot(
     command_prefix=COMMAND_PREFIX if COMMAND_PREFIX else ".",
     intents=intent, case_insensitive=True,
@@ -60,6 +66,9 @@ class RemoveFlags(commands.FlagConverter):
     topic: Optional[str]
 
 queue = TopicQueue(preload=preload_topics)
+
+# Create the user db
+BaseModel.metadata.create_all(engine)
 # NOTE: END SETUP
 
 @client.check
@@ -69,20 +78,22 @@ async def is_locked(ctx):
 
     return not LOCK
 
-@tasks.loop(time=time)
+# NOTE: Deprecated
+@tasks.loop(time=waitTime)
 async def send_thought(topic: Optional[str] = None):
     global queue
     channel = client.get_channel(DUMP_CHANNEL)
     async with channel.typing(): # Known type checking error
-        chain = create_aniketh_ai()
+        chain = create_aniketh_ai(ConversationBufferWindowMemory())
         topic = topic if topic else queue.pick_topic()
-        message = chain.predict(topic=topic)
+        message = chain.predict(user_message=f"What are your thoughts on {topic}")
     await channel.send(f"**Topic**: {topic}\n" + message) # Known type checking error
 
 @client.event
 async def on_ready():
     print('I am ready')
-    send_thought.start()
+    # Deprecated
+    # send_thought.start()
 
 @client.command()
 async def request(ctx, *, topic):
@@ -157,6 +168,7 @@ async def stop_loop(ctx):
 
 @admin.command(name="startl")
 async def start_loop(ctx):
+    await ctx.send(embed=cmd_error("WARNING: This loop is deprecated!!"))
     if send_thought.is_running():
         await ctx.send(embed=cmd_error("Task is already running."))
         return
@@ -202,6 +214,21 @@ async def unlock(ctx):
         LOCK = False
         await ctx.send(embed=info_msg("Commands are now unlocked."))
 
+@client.event
+async def on_message(message: discord.Message):
+
+    # ignore if self
+    if message.author == client.user:
+        return
+
+    await client.process_commands(message)
+
+    if client.user.mentioned_in(message): # known type error
+        async with message.channel.typing():
+            mem = get_user_mem(message.author.id)
+            chain = create_aniketh_ai(mem)
+            msg = chain.predict(user_message=message.clean_content)
+        await message.channel.send(msg)
 
 # General error handling for all commands.
 # NOTE: Change this soon
