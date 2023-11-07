@@ -3,3 +3,5 @@ test*
 *.log
 *.db
 __*
+.venv/
+
