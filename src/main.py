@@ -5,9 +5,6 @@ from typing import Optional, Tuple
 import asyncio
 from datetime import datetime
 
-from sqlalchemy.engine import create
-
-
 from anikethChain import create_aniketh_ai
 from topicQueue import QueueError, TopicQueue
 from database import BaseModel, dump_user_mem, get_user_mem, engine
@@ -34,11 +31,14 @@ from langchain.memory import ConversationBufferWindowMemory
 intent = discord.Intents().default()
 intent.message_content = True
 
+# log to stdout
 handler = logging.StreamHandler(stream=sys.stdout)
 
+# load the .env file
 dotenv_path = join(dirname(__file__), 'data', '.env')
 load_dotenv(dotenv_path=dotenv_path)
 
+# grab our env vars
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", ""))
 TOKEN = os.environ.get("TOKEN", "")
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
@@ -48,9 +48,12 @@ START_DATETIME = datetime.now()
 
 # how many hours to wait inbetween loops
 waitTime = time(hour=15, minute=0)
+
+# Discord Bot instance
 client = commands.Bot(
     command_prefix=COMMAND_PREFIX if COMMAND_PREFIX else ".",
-    intents=intent, case_insensitive=True,
+    intents=intent, 
+    case_insensitive=True, # case insensitive commands
     help_command=None
 )
 
@@ -65,10 +68,12 @@ class RemoveFlags(commands.FlagConverter):
     span: Tuple[int, int] = None # Known type checking error
     topic: Optional[str]
 
+# Create a global queue
 queue = TopicQueue(preload=preload_topics)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)
+
 # NOTE: END SETUP
 
 @client.check
@@ -92,7 +97,6 @@ async def send_thought(topic: Optional[str] = None):
 @client.event
 async def on_ready():
     print('I am ready')
-    # Deprecated
     # send_thought.start()
 
 @client.command()
@@ -124,7 +128,6 @@ async def remove(ctx, topics: commands.Greedy[int], *, flags: RemoveFlags):
         embeds.append(info_msg(f"Removed the Following:\n\n{topic_str}"))
     else:
         raise commands.errors.UserInputError("No arguments were parsed, please refer to the help manual.")
-
 
     await ctx.send(embeds=embeds)
 
