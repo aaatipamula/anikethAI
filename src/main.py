@@ -36,7 +36,10 @@ handler = logging.StreamHandler(stream=sys.stdout)
 
 # load the .env file
 dotenv_path = join(dirname(__file__), 'data', '.env')
-load_dotenv(dotenv_path=dotenv_path)
+try:
+    load_dotenv(dotenv_path=dotenv_path)
+except FileNotFoundError:
+    print(".env not found")
 
 # grab our env vars
 DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", ""))
