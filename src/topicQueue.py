@@ -1,6 +1,7 @@
-from typing import Optional, List, Tuple
-from discord.ext.commands import CommandError
 from random import choice
+from typing import Optional, List, Tuple
+
+from discord.ext.commands import CommandError
 
 class QueueError(CommandError):
     pass
@@ -100,7 +101,6 @@ class TopicQueue:
 
         self._topics.append(topic)
 
-
     def pick_topic(self) -> str:
         """Pick a random topic and remove it from the list. Generate one if it doesn't exist."""
         try:
@@ -108,7 +108,6 @@ class TopicQueue:
             self.remove_topic_name(topic)
         except EmptyQueue:
             # NOTE: Temporary, come up with a system to generate a topic based on trends
-            topic = "come up with your own"
+            topic = "something you are interested in"
 
         return topic
-
