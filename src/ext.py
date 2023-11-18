@@ -56,6 +56,29 @@ async def admin_dashboard(client, starttime: datetime.datetime):
     a = discord.Embed(color=embed_color, title="Admin Dashboard", description=desc)
     return a
 
+def star_message(message: discord.Message, count: int):
+    a = discord.Embed(
+        title=message.author.display_name,
+        color=embed_color,
+        timestamp=datetime.datetime.now(),
+        description=f":star: {count}"
+    )
+    a.set_thumbnail(url=message.author.display_avatar.url)
+    a.add_field(
+        name="Message:", 
+        value=message.content + f"\n\n[Jump to message!]({message.jump_url})", 
+        inline=False
+    )
+    attachments = []
+    for attachment in message.attachments:
+        if attachment.content_type in ('image/png', 'image/jpeg'):
+            a.set_image(url=attachment.url)
+        else:
+            attachments.append(f"[{attachment.filename}]({attachment.url})")
+    if attachments:
+        a.add_field(name="Attachments: ", value="\n".join(attachments))
+    return a
+
 # format the help embed for specific command
 def format_command(name: str, command: dict) -> discord.Embed:
     opts = [param['name'] for param in command['params']] if command['params'] else []

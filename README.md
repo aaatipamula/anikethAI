@@ -4,10 +4,14 @@ This was mostly a weekend project that I made for fun. I usually come back to di
 
 # Enviornment Variables
 ```shell
+# required
 TOKEN="discord_token"
 OPENAI_API_KEY="openai_key"
 COMMAND_PREFIX="!"
-DUMP_CHANNEL=915992354706567168
-ABOUT_ME="about_me"
-```
+DUMP_CHANNEL="channel_id"
+ABOUT_ME="Some about me..."
 
+# optional
+UPDATE_WAIT="hours_to_wait_between_status_change" # defaults to 18 hours
+CONFIM_EMOTE_ID="emote_id" # used to confirm killing the bot
+```

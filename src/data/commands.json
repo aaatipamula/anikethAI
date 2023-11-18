@@ -18,14 +18,12 @@
     ]
   },
 
-
   "topics": {
     "hidden": false,
     "cmd_desc": "Lists all topics in queue.",
     "params": null,
     "usage": ["`.topics`"]
   },
-
   
   "rm": {
     "hidden": false,
@@ -64,7 +62,6 @@
     ]
   },
 
-
   "thought": {
     "hidden": true,
     "cmd_desc": "Send a thought on a topic.",
@@ -84,14 +81,12 @@
     ]
   },
 
-
   "admin": {
     "hidden": true,
     "cmd_desc": "Displays a message which gives the status of the bot.",
     "params": null,
     "usage": ["`.admin`"]
   },
-
 
   "admin-startl": {
     "hidden": true,
@@ -100,14 +95,12 @@
     "usage": ["`.admin startl`"]
   },
 
-
   "admin-stopl": {
     "hidden": true,
     "cmd_desc": "Starts the daily message loop.",
     "params": null,
     "usage": ["`.admin stopl`"]
   },
-
 
   "admin-statusl": {
     "hidden": true,
@@ -116,14 +109,12 @@
     "usage": ["`.admin statusl`"]
   },
 
-
   "admin-kill": {
     "hidden": true,
     "cmd_desc": "Completely shuts down the bot. Must react to the bot message with <:L_:1136812895859134555> within 10 seconds.",
     "params": null,
     "usage": ["`.admin kill`"]
   },
-
 
   "admin-lock": {
     "hidden": true,
@@ -132,11 +123,42 @@
     "usage": ["`.admin lock`"]
   },
 
-
   "admin-unlock": {
     "hidden": true,
     "cmd_desc": "Unlocks all commands.",
     "params": null,
     "usage": ["`.admin unlock`"]
+  },
+
+  "admin-minstars": {
+    "hidden": true,
+    "cmd_desc": "Change the minimum number of stars for a starboard message.",
+    "params": [
+      {
+        "name": "stars",
+        "optional": false,
+        "type": "positional",
+        "data_type": "int",
+        "description": "The minimum number of stars",
+        "notes": "Must be a valid integer, defaults to 3."
+      }
+    ],
+    "usage": ["`.admin minstars 3`"]
+  },
+  
+  "admin-starboard": {
+    "hidden": true,
+    "cmd_desc": "Change the starbord channel.",
+    "params": [
+      {
+        "name": "channel",
+        "optional": false,
+        "type": "positional",
+        "data_type": "text_channel",
+        "description": "The channel to become the starboard.",
+        "notes": "Must be a valid channel, defaults to the dump channel."
+      }
+    ],
+    "usage": ["`.admin starboard #starboard-channel`"]
   }
 }
