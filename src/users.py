@@ -1,4 +1,6 @@
 from typing import Tuple, Optional, Union
+from asyncio import sleep as asyncsleep
+import random
 
 from discord.ext import commands
 from discord import Message, Reaction, User, Member
@@ -13,6 +15,29 @@ from database import (
     remove_starred_message
 )
 from ext import info_msg, cmd_error, star_message, topic_msg, help_command
+
+boomin_tags = [
+    "This beat is so, Metro",
+    "Metro boomin want some more n*gga",
+    "If Young Metro don't trust you I'm gon' shoot you",
+    "Young Metro, young metro, young metro",
+    "Metro!",
+    "Metro in this bitch goin' crazy"
+]
+
+khalidisms = [
+    "Anotha' One",
+    "We da best music",
+    "Tell em to bring out the whole ocean",
+    "Bumbaclat",
+    "And perhaps what is is?",
+    "Sunday morning, sunday brunch",
+    "I call her chandelier",
+    "Life...is Roblox",
+    "Tell em' to bring out the lobster",
+    "Roses are red, violets are blue"
+    "Tell em' to bring the yacht out",
+]
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
@@ -36,6 +61,16 @@ class UserCog(commands.Cog):
     @property
     def starboard(self):
         return self.bot.get_channel(self.starboard_id) if self.starboard_id else None
+
+    @staticmethod
+    async def randomsg(channel: discord.TextChannel, count=5):
+        async with channel.typing():
+            while count > 0:
+                time = random.randint(1, 10)
+                await asyncsleep(time)
+                rand_msg = random.choice(khalidisms)
+                await channel.send(rand_msg)
+                count -= 1
     
     @commands.command()
     async def request(self, ctx, *, topic):
@@ -87,6 +122,8 @@ class UserCog(commands.Cog):
         if message.author == self.bot.user:
             return
 
+        owner = await self.bot.is_owner(message.author)
+
         if self.bot.user.mentioned_in(message): # known type error
             async with message.channel.typing():
                 mem = get_user_mem(message.author.id)
@@ -94,6 +131,21 @@ class UserCog(commands.Cog):
                 msg = chain.predict(user_message=message.clean_content)
                 dump_user_mem(message.author.id, mem)
             await message.channel.send(msg)
+
+        if owner and "khaled" in message.content.lower():
+            await self.randomsg(message.channel)
+
+        if "metro" in message.content.lower():
+            tag = random.choice(boomin_tags)
+            await message.reply(tag, mention_author=False)
+
+        if "balls" in message.content:
+            async with message.channel.typing():
+                await asyncsleep(1)
+                await message.reply("balls mentioned 🔥🔥🔥", mention_author=False)
+
+        if "merica" in message.content or "freedom" in message.content:
+            await message.reply("🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", mention_author=False)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, user: Union[Member, User]):
