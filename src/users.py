@@ -3,7 +3,7 @@ from asyncio import sleep as asyncsleep
 import random
 
 from discord.ext import commands
-from discord import Message, Reaction, User, Member
+from discord import Message, Reaction, User, Member, TextChannel
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -63,7 +63,7 @@ class UserCog(commands.Cog):
         return self.bot.get_channel(self.starboard_id) if self.starboard_id else None
 
     @staticmethod
-    async def randomsg(channel: discord.TextChannel, count=5):
+    async def randomsg(channel: TextChannel, count=5):
         async with channel.typing():
             while count > 0:
                 time = random.randint(1, 10)
