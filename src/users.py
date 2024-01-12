@@ -8,7 +8,7 @@ from discord import Message, Reaction, User, Member, TextChannel
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from database import (
-    get_user_mem, 
+    get_user_mem,
     dump_user_mem,
     get_board_message_id,
     add_starred_message,
@@ -16,26 +16,15 @@ from database import (
 )
 from ext import info_msg, cmd_error, star_message, topic_msg, help_command
 
-boomin_tags = [
-    "This beat is so, Metro",
-    "Metro boomin want some more n*gga",
-    "If Young Metro don't trust you I'm gon' shoot you",
-    "Young Metro, young metro, young metro",
-    "Metro!",
-    "Metro in this bitch goin' crazy"
-]
-
 khalidisms = [
     "Anotha' One",
     "We da best music",
     "Tell em to bring out the whole ocean",
-    "Bumbaclat",
-    "And perhaps what is is?",
+    "And perhaps what is this?",
     "Sunday morning, sunday brunch",
-    "I call her chandelier",
+    "I call er chandelier",
     "Life...is Roblox",
     "Tell em' to bring out the lobster",
-    "Roses are red, violets are blue"
     "Tell em' to bring the yacht out",
 ]
 
@@ -46,7 +35,7 @@ class RemoveFlags(commands.FlagConverter):
 
 class UserCog(commands.Cog):
     def __init__(
-        self, 
+        self,
         bot: commands.Bot,
         topic_queue: TopicQueue,
         about_me: str,
@@ -71,7 +60,7 @@ class UserCog(commands.Cog):
                 rand_msg = random.choice(khalidisms)
                 await channel.send(rand_msg)
                 count -= 1
-    
+
     @commands.command()
     async def request(self, ctx, *, topic):
         global queue
@@ -124,7 +113,7 @@ class UserCog(commands.Cog):
 
         owner = await self.bot.is_owner(message.author)
 
-        if self.bot.user.mentioned_in(message): # known type error
+        if self.bot.user.mentioned_in(message): # known type checking error
             async with message.channel.typing():
                 mem = get_user_mem(message.author.id)
                 chain = create_aniketh_ai(mem)
@@ -133,11 +122,7 @@ class UserCog(commands.Cog):
             await message.channel.send(msg)
 
         if owner and "khaled" in message.content.lower():
-            await self.randomsg(message.channel)
-
-        if "metro" in message.content.lower():
-            tag = random.choice(boomin_tags)
-            await message.reply(tag, mention_author=False)
+            await self.randomsg(message.channel) # known type checking error
 
         if "balls" in message.content:
             async with message.channel.typing():
@@ -151,7 +136,7 @@ class UserCog(commands.Cog):
     async def on_reaction_add(self, reaction: Reaction, user: Union[Member, User]):
         if str(reaction.emoji) == '⭐':
             if self.starboard is None:
-                return                
+                return
             elif self.starboard == reaction.message.channel:
                 return
 
@@ -163,13 +148,13 @@ class UserCog(commands.Cog):
                 star_embed = star_message(reaction.message, reaction.count)
                 board_id = get_board_message_id(reaction.message.id)
                 message = await self.starboard.fetch_message(board_id)
-                await message.edit(embed=star_embed) 
+                await message.edit(embed=star_embed)
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: Reaction, user: Union[Member, User]):
         if str(reaction.emoji) == '⭐':
             if self.starboard is None:
-                return                
+                return
             elif self.starboard == reaction.message.channel:
                 return
 
@@ -182,5 +167,5 @@ class UserCog(commands.Cog):
                 star_embed = star_message(reaction.message, reaction.count)
                 board_id = get_board_message_id(reaction.message.id)
                 message = await self.starboard.fetch_message(board_id)
-                await message.edit(embed=star_embed) 
+                await message.edit(embed=star_embed)
 
