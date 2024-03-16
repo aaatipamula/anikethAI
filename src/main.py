@@ -2,6 +2,7 @@ import os
 import sys
 import traceback as tb
 from datetime import datetime
+from os.path import join, dirname
 
 from users import UserCog
 from admin import AdminCog
@@ -15,7 +16,6 @@ from ext import (
 import discord
 import logging
 from dotenv import load_dotenv
-from os.path import join, dirname
 from discord.ext import commands
 
 # load the .env file

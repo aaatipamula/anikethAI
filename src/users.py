@@ -102,8 +102,10 @@ class UserCog(commands.Cog):
     @commands.command()
     async def help(self, ctx, opt="general"):
         is_owner = await self.bot.is_owner(ctx.author)
-        embeds = help_command(opt, ctx.prefix, self.about_me, is_owner=is_owner)
-        await ctx.send(embeds=embeds)
+        userHelp, adminHelp = help_command(opt, ctx.prefix, self.about_me, is_owner=is_owner)
+        await ctx.send(embed=userHelp)
+        if adminHelp:
+            await ctx.send(embed=adminHelp, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):

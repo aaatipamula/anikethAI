@@ -2,7 +2,7 @@ import json
 import random
 import datetime
 from pytz import timezone
-from typing import List
+from typing import List, Tuple
 from os.path import join, dirname
 
 import discord
@@ -102,7 +102,12 @@ def format_command(name: str, command: dict) -> discord.Embed:
     return cmdEmbed
 
 # help command, scalable through the commands.json file
-def help_command(opt: str, command_prefix: str, about_me: str, is_owner: bool = False) -> List[discord.Embed]:
+def help_command(
+    opt: str, 
+    command_prefix: str, 
+    about_me: str, 
+    is_owner: bool = False
+) -> Tuple[discord.Embed, discord.Embed | None]:
 
     messages = ["Help Has Arrived!", "At Your Service!"]
 
@@ -112,14 +117,18 @@ def help_command(opt: str, command_prefix: str, about_me: str, is_owner: bool = 
             if not command.get("hidden"):
                 cmdEmbed.add_field(name=name, value=command.get("cmd_desc"), inline=False)
         cmdEmbed.set_footer(text= f"Bot Command Prefix = '{command_prefix}'")
-        embeds = [cmdEmbed]
         if is_owner:
-            adminEmbed = discord.Embed(title="Admin Commands", color=embed_color, description="Commands for the owner to use.")
+            adminEmbed = discord.Embed(
+                title="Admin Commands",
+                color=embed_color,
+                description="Commands for the owner to use."
+            )
             for name, command in commands.items():
                 if command.get("hidden") and is_owner:
                     adminEmbed.add_field(name=name, value=command.get("cmd_desc"), inline=False)
-            embeds.append(adminEmbed)
-        return embeds
+        else: adminEmbed = None
+
+        return cmdEmbed, adminEmbed
 
     elif opt in commands:
         cmd = commands.get(opt)
