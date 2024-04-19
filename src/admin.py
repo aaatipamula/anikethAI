@@ -18,7 +18,8 @@ class AdminCog(commands.Cog):
         bot: commands.Bot, 
         topic_queue: TopicQueue,
         log_channel_id: int,
-        confirmation_emote_id: int = 1136812895859134555 #:L_: emoji
+        # NOTE: Make this an enviornment variable eventually
+        confirmation_emote_id: int = 1136812895859134555 #:L_: emoji 
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
