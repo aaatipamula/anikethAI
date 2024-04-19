@@ -1,9 +1,7 @@
 from typing import Tuple, Optional, Union
-from asyncio import sleep as asyncsleep
-import random
 
 from discord.ext import commands
-from discord import Message, Reaction, User, Member, TextChannel
+from discord import Message, Reaction, User, Member
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -15,18 +13,6 @@ from database import (
     remove_starred_message
 )
 from ext import info_msg, cmd_error, star_message, topic_msg, help_command
-
-khalidisms = [
-    "Anotha' One",
-    "We da best music",
-    "Tell em to bring out the whole ocean",
-    "And perhaps what is this?",
-    "Sunday morning, sunday brunch",
-    "I call er chandelier",
-    "Life...is Roblox",
-    "Tell em' to bring out the lobster",
-    "Tell em' to bring the yacht out",
-]
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
@@ -50,16 +36,6 @@ class UserCog(commands.Cog):
     @property
     def starboard(self):
         return self.bot.get_channel(self.starboard_id) if self.starboard_id else None
-
-    @staticmethod
-    async def randomsg(channel: TextChannel, count=5):
-        async with channel.typing():
-            while count > 0:
-                time = random.randint(1, 10)
-                await asyncsleep(time)
-                rand_msg = random.choice(khalidisms)
-                await channel.send(rand_msg)
-                count -= 1
 
     @commands.command()
     async def request(self, ctx, *, topic):
@@ -113,8 +89,6 @@ class UserCog(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        owner = await self.bot.is_owner(message.author)
-
         if self.bot.user.mentioned_in(message): # known type checking error
             async with message.channel.typing():
                 mem = get_user_mem(message.author.id)
@@ -123,19 +97,14 @@ class UserCog(commands.Cog):
                 dump_user_mem(message.author.id, mem)
             await message.channel.send(msg)
 
-        if owner and "khaled" in message.content.lower():
-            await self.randomsg(message.channel) # known type checking error
-
         if "balls" in message.content:
-            async with message.channel.typing():
-                await asyncsleep(1)
-                await message.reply("balls mentioned 🔥🔥🔥", mention_author=False)
+            await message.reply("balls mentioned 🔥🔥🔥", mention_author=False)
 
         if "merica" in message.content or "freedom" in message.content:
             await message.reply("🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", mention_author=False)
 
     @commands.Cog.listener()
-    async def on_reaction_add(self, reaction: Reaction, user: Union[Member, User]):
+    async def on_reaction_add(self, reaction: Reaction, _: Union[Member, User]):
         if str(reaction.emoji) == '⭐':
             if self.starboard is None:
                 return
@@ -153,7 +122,7 @@ class UserCog(commands.Cog):
                 await message.edit(embed=star_embed)
 
     @commands.Cog.listener()
-    async def on_reaction_remove(self, reaction: Reaction, user: Union[Member, User]):
+    async def on_reaction_remove(self, reaction: Reaction, _: Union[Member, User]):
         if str(reaction.emoji) == '⭐':
             if self.starboard is None:
                 return

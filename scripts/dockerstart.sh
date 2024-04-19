@@ -10,13 +10,13 @@ if [ -f ./Dockerfile ]
 then 
 
   echo 'Building main docker container image...'
-  DOCKER_BUILDKIT=1 docker build -t $1 -f ./scripts/Dockerfile . 
+  DOCKER_BUILDKIT=1 docker build -t $1 . 
 
   echo 'Starting containers...'
   docker run -d \
     -it \
     --name $1 \
-    --mount type=bind,source=$(pwd)/src/data,target=/home/bot/src/data,readonly \
+    --mount type=bind,source=$(pwd)/src/data,target=/home/bot/src/data \
     $1
 
 else
