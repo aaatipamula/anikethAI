@@ -1,4 +1,5 @@
 from typing import Tuple, Optional, Union
+from random import choice, randint
 
 from discord.ext import commands
 from discord import Message, Reaction, User, Member
@@ -13,6 +14,14 @@ from database import (
     remove_starred_message
 )
 from ext import info_msg, cmd_error, star_message, topic_msg, help_command
+
+khaledisms = [
+    "We da best music :fire:",
+    "God did.",
+    "Tell 'em to bring out the whole ocean!",
+    "DEEEJAAAYYY KKKKHHHAAALLLLLLLEEEEEED",
+    "They ain't believe in us."
+ ]
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
@@ -102,6 +111,9 @@ class UserCog(commands.Cog):
 
         if "merica" in message.content or "freedom" in message.content:
             await message.reply("🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", mention_author=False)
+
+        if "believe" in message.content and randint(1, 6) == 1:
+            await message.reply(choice(khaledisms))
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, _: Union[Member, User]):
