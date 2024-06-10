@@ -2,5 +2,4 @@ __*
 .git
 .gitignore
 *.log
-.env
-*.json
+
