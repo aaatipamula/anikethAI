@@ -2,7 +2,7 @@ import json
 import random
 import datetime
 from pytz import timezone
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 from os.path import join, dirname
 
 import discord
@@ -131,8 +131,16 @@ def help_command(
         return cmdEmbed, adminEmbed
 
     elif opt in commands:
-        cmd = commands.get(opt)
-        return [format_command(opt, cmd)] # Known type checking error
+        cmd = commands.get(opt, "")
+        return format_command(opt, cmd), None # Known type checking error
 
-    return [bot_error("Not a valid command.")]
+    return bot_error("Not a valid command."), None
+
+def random_messages(
+    messages: List[Tuple[str, str | Callable[[], str], float]],
+    content: str
+):
+    for trigger, response, probability in messages:
+        if random.random() < probability and trigger in content:
+            yield response() if callable(response) else response
 

@@ -1,8 +1,9 @@
 from typing import Tuple, Optional, Union
-from random import choice, randint
+from random import choice as randChoice
+from asyncio import sleep as asyncSleep
 
 from discord.ext import commands
-from discord import Message, Reaction, User, Member
+from discord import Message, Reaction, User, Member, message
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -13,7 +14,14 @@ from database import (
     add_starred_message,
     remove_starred_message
 )
-from ext import info_msg, cmd_error, star_message, topic_msg, help_command
+from ext import (
+    info_msg,
+    cmd_error,
+    random_messages,
+    star_message,
+    topic_msg,
+    help_command
+)
 
 khaledisms = [
     "We da best music :fire:",
@@ -22,6 +30,13 @@ khaledisms = [
     "DEEEJAAAYYY KKKKHHHAAALLLLLLLEEEEEED",
     "They ain't believe in us."
  ]
+
+random_replys = [
+    ("balls", "balls mentioned 🔥🔥🔥", 0.7),
+    ("merica", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.6),
+    ("freedom", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.6),
+    ("believe", lambda: randChoice(khaledisms), 0.4)
+]
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
@@ -89,7 +104,7 @@ class UserCog(commands.Cog):
         is_owner = await self.bot.is_owner(ctx.author)
         userHelp, adminHelp = help_command(opt, ctx.prefix, self.about_me, is_owner=is_owner)
         await ctx.send(embed=userHelp)
-        if adminHelp:
+        if adminHelp is not None:
             await ctx.send(embed=adminHelp, ephemeral=True)
 
     @commands.Cog.listener()
@@ -106,14 +121,9 @@ class UserCog(commands.Cog):
                 dump_user_mem(message.author.id, mem)
             await message.channel.send(msg)
 
-        if "balls" in message.content:
-            await message.reply("balls mentioned 🔥🔥🔥", mention_author=False)
-
-        if "merica" in message.content or "freedom" in message.content:
-            await message.reply("🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", mention_author=False)
-
-        if "believe" in message.content and randint(1, 6) == 1:
-            await message.reply(choice(khaledisms))
+        for reply_message in random_messages(random_replys, message.content):
+            await message.reply(reply_message, mention_author=False)
+            await asyncSleep(0.5)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, _: Union[Member, User]):
