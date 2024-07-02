@@ -32,6 +32,7 @@ khaledisms = [
  ]
 
 random_replys = [
+    ("america ya", "HALLO! <a:wave:1004493976201592993>", 1.0),
     ("balls", "balls mentioned 🔥🔥🔥", 0.7),
     ("merica", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.6),
     ("freedom", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.6),
