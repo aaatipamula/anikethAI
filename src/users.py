@@ -116,10 +116,10 @@ class UserCog(commands.Cog):
 
         if self.bot.user.mentioned_in(message): # known type checking error
             async with message.channel.typing():
-                mem = get_user_mem(message.author.id)
+                mem = get_user_mem(message.channel.id) # Use channel ids to gather messages
                 chain = create_aniketh_ai(mem)
                 msg = chain.predict(user_message=message.clean_content)
-                dump_user_mem(message.author.id, mem)
+                dump_user_mem(message.channel.id, mem)
             await message.channel.send(msg)
 
         for reply_message in random_messages(random_replys, message.content):

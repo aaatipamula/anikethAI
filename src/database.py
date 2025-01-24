@@ -21,7 +21,7 @@ db_path = join(dirname(__file__), 'data', 'bot.db')
 engine = create_engine("sqlite:///" + db_path)
 
 # Make this an env variable eventually
-MEM_LEN = 7
+MEM_LEN = 12
 
 class BaseModel(DeclarativeBase): ...
 
