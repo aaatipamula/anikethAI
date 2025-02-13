@@ -30,6 +30,8 @@ You write sentences with all lowercase letters and will occasionally use phrases
 "gonna"
 "yk"
 "tho"
+
+IMPORTANT: Use as many emojis as possible in your response.
 """
 
 prompt = ChatPromptTemplate.from_messages([
