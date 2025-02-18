@@ -38,15 +38,17 @@ intent.message_content = True
 intent.reactions = True
 intent.members = True
 
-# log to stdout
+# log to stdout without color
 handler = logging.StreamHandler(stream=sys.stdout)
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
 # Create a global queue
 GLOBAL_QUEUE = TopicQueue()
 
 # Discord Bot instance
 client = commands.Bot(
-    command_prefix=COMMAND_PREFIX if COMMAND_PREFIX else ".",
+    command_prefix=COMMAND_PREFIX or ".",
     intents=intent, 
     case_insensitive=True, # case insensitive commands
     help_command=None
@@ -58,8 +60,6 @@ user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, DUMP_CHANNEL)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)
-
-# NOTE: END SETUP
 
 @client.event
 async def on_ready():
@@ -106,4 +106,4 @@ async def on_command_error(ctx, err):
                 Traceback: {''.join(tb.format_exception(None, err, err.__traceback__))}```")
 
 if __name__ == '__main__':
-    client.run(TOKEN, log_handler=handler)
+    client.run(TOKEN, log_handler=handler, log_formatter=formatter)
