@@ -3,7 +3,7 @@ from random import choice as randChoice
 from asyncio import sleep as asyncSleep
 
 from discord.ext import commands
-from discord import Message, Reaction, User, Member, message
+from discord import Message, Reaction, User, Member
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -33,7 +33,7 @@ khaledisms = [
 
 random_replys = [
     ("america ya", "HALLO! <a:wave:1004493976201592993>", 1.0),
-    ("balls", "balls mentioned 🔥🔥🔥", 0.7),
+    ("balls", "balls mentioned 🔥🔥🔥", 0.45),
     ("merica", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.45),
     ("freedom", "🦅🦅:flag_us::flag_us:💥💥SOMEONE SAY FREEDOM?!💥💥:flag_us::flag_us:🦅🦅", 0.2),
     ("believe", lambda: randChoice(khaledisms), 0.4)

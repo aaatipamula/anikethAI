@@ -1,16 +1,26 @@
 import os
-from datetime import datetime
-from asyncio import TimeoutError
+from time import gmtime, struct_time
+from datetime import datetime, timezone, time
+from asyncio import TimeoutError#, sleep as async_sleep
+from typing import List, Tuple
 
-from discord import Game, TextChannel
+import pytz
+import feedparser
+from discord import Game, TextChannel, Embed
 from discord.ext import commands, tasks
 from langchain.memory import ConversationBufferWindowMemory
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
-from ext import admin_dashboard, cmd_error, info_msg, loop_status
+from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
+from users import UserCog
+
+central_tz = pytz.timezone('America/Chicago')
+dt_obj = datetime.combine(datetime.today(), time(hour=10))
+central_time = central_tz.localize(dt_obj).timetz()
 
 UPDATE_WAIT = int(os.environ.get("UPDATE_WAIT", 18))
+RSS_UPDATE_TIME = central_time
 
 class AdminCog(commands.Cog):
     def __init__(
@@ -18,24 +28,67 @@ class AdminCog(commands.Cog):
         bot: commands.Bot, 
         topic_queue: TopicQueue,
         log_channel_id: int,
-        # NOTE: Make this an enviornment variable eventually
-        confirmation_emote_id: int = 1136812895859134555 #:L_: emoji 
+        # NOTE: Make the following environment variables
+        confirmation_emote_id: int = 1136812895859134555, #:L_: emoji
+        rss_feeds: List[str] | None = None
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
         self.log_channel_id = log_channel_id
         self.confim_emote_id = confirmation_emote_id
-
         self.start_datetime = datetime.now()
         self.locked = False
 
+        # TODO: Persist RSS feeds to database/file
+        self.rss_feeds = rss_feeds or ["https://www.autosport.com/rss/f1/news/"]
+        self.rss_channel_id = log_channel_id # Default the RSS channel for now
+        self.rss_last_updated = gmtime()
+
     @property
     def log_channel(self):
-        self.bot.get_channel(self.log_channel_id)
+        c = self.bot.get_channel(self.log_channel_id)
+        assert isinstance(c, TextChannel) # Channel must be a text channel
+        return c
+
+    @property
+    def rss_channel(self):
+        c = self.bot.get_channel(self.log_channel_id)
+        assert isinstance(c, TextChannel) # Channel must be a text channel
+        return c
 
     @property
     def confim_emote(self):
-        self.bot.get_channel(self.confim_emote_id)
+        e = self.bot.get_emoji(self.confim_emote_id)
+        assert e is not None
+        return e
+
+    def get_rss_updates(self, days_ago: int | None = None) -> Tuple[List[Embed], List[str]]:
+        posts = []
+        invalid_urls = []
+
+        # Set last updated to n days ago
+        if days_ago:
+            t = list(self.rss_last_updated)
+            t[2] -= days_ago
+            self.rss_last_updated = struct_time(t)
+
+        for url in self.rss_feeds:
+            source = feedparser.parse(url)
+            if (source.bozo):
+                invalid_urls.append(url)
+                continue
+
+            # NOTE: feedparser library is horribly typed
+            for entry in source.entries:
+                if entry.published_parsed > self.rss_last_updated:
+                    timestamp = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                    post = rss_embed(entry.title, entry.description, entry.link, timestamp)
+                    posts.insert(0, post)
+                else:
+                    break # We can ignore the rest of the posts
+
+        self.rss_last_updated = gmtime()
+        return posts, invalid_urls
 
     @tasks.loop(hours=UPDATE_WAIT)
     async def set_status(self):
@@ -45,14 +98,61 @@ class AdminCog(commands.Cog):
         game = Game(message)
         await self.bot.change_presence(activity=game)
 
+    @tasks.loop(time=RSS_UPDATE_TIME)
+    async def update_rss_channel(self):
+        try:
+            posts, errs = self.get_rss_updates()
+        except AttributeError as err:
+            await self.log_channel.send(embed=cmd_error(f"There was an error grabbing some post information:\n\n{err}"))
+            return
+
+        if errs:
+            f_errs = ", ".join(errs)
+            await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
+
+        start = 0
+        while start < len(posts):
+            stop = start + 5 if start + 5 < len(posts) else len(posts)
+            await self.rss_channel.send(embeds=posts[start:stop])
+            start = stop
+
     @commands.group(pass_context=True)
-    async def admin(self, ctx):
+    async def admin(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             embed = await admin_dashboard(self.bot, self.start_datetime)
             await ctx.send(embed=embed)
 
+    @admin.command(name="getrss")
+    async def get_rss_from(self, ctx: commands.Context, days_ago: int):
+        try:
+            posts, errs = self.get_rss_updates(days_ago)
+        except AttributeError as err:
+            await self.log_channel.send(embed=cmd_error(f"There was an error grabbing some post information:\n\n{err}"))
+            return
+
+        if errs:
+            f_errs = ", ".join(errs)
+            await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
+
+        start = 0
+        while start < len(posts):
+            stop = start + 5 if start + 5 < len(posts) else len(posts)
+            await ctx.send(embeds=posts[start:stop])
+            # NOTE: async_sleep(0.45)
+            start = stop
+
+    @admin.command(name="setrss")
+    async def set_rss_channel(self, ctx: commands.Context, chan: TextChannel):
+        self.rss_channel_id = chan.id
+        await ctx.send(embed=info_msg(f"Set RSS channel to {chan}"))
+
+    @admin.command(name="addfeed")
+    async def add_rss_feed(self, ctx: commands.Context, url: str):
+        self.rss_feeds.append(url)
+        await ctx.send(embed=info_msg(f"Added URL: `{url}`"))
+
     @admin.command(name="stopl")
-    async def stop_loop(self, ctx):
+    async def stop_loop(self, ctx: commands.Context):
         if self.set_status.is_running():
             self.set_status.cancel()
         else:
@@ -61,7 +161,7 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg("Stopped updating status"))
 
     @admin.command(name="startl")
-    async def start_loop(self, ctx):
+    async def start_loop(self, ctx: commands.Context):
         if self.set_status.is_running():
             await ctx.send(embed=cmd_error("Task is already running."))
             return
@@ -70,7 +170,7 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg("Started updating status."))
 
     @admin.command(name="statusl")
-    async def status_loop(self, ctx):
+    async def status_loop(self, ctx: commands.Context):
         embed = loop_status(
             self.set_status.is_running(), 
             self.set_status.next_iteration
@@ -78,7 +178,7 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=embed)
 
     @admin.command(name="kill")
-    async def kill_bot(self, ctx):
+    async def kill_bot(self, ctx: commands.Context):
         await ctx.send(f"NOOOOO PLEASE {self.bot.get_emoji(1145147159260450907)}") # :cri: emoji
 
         def check(reaction, user):
@@ -87,13 +187,13 @@ class AdminCog(commands.Cog):
         try:
             await self.bot.wait_for("reaction_add", timeout=10.0, check=check)
         except TimeoutError:
-            await ctx.send(self.bot.get_emoji(994378239675990029))
+            await ctx.send(str(self.bot.get_emoji(994378239675990029)))
         else:
-            await ctx.send(self.bot.get_emoji(1145090024333918320))
+            await ctx.send(str(self.bot.get_emoji(1145090024333918320)))
             exit(0)
 
     @admin.command()
-    async def lock(self, ctx):
+    async def lock(self, ctx: commands.Context):
         if self.locked:
             await ctx.send(embed=cmd_error("Commands already locked."))
         else:
@@ -101,7 +201,7 @@ class AdminCog(commands.Cog):
             await ctx.send(embed=info_msg("Commands now locked."))
 
     @admin.command()
-    async def unlock(self, ctx):
+    async def unlock(self, ctx: commands.Context):
         if not self.locked:
             await ctx.send(embed=cmd_error("Commands already unlocked."))
         else:
@@ -109,19 +209,21 @@ class AdminCog(commands.Cog):
             await ctx.send(embed=info_msg("Commands now unlocked."))
 
     @admin.command()
-    async def starboard(self, ctx, channel: TextChannel):
+    async def starboard(self, ctx: commands.Context, channel: TextChannel):
         user_cog = self.bot.get_cog('UserCog')
-        user_cog.starboard_id = channel.id  # known type checking error
+        assert isinstance(user_cog, UserCog)
+        user_cog.starboard_id = channel.id
         await ctx.send(embed=info_msg(f"Set starboard to {channel}"))
 
     @admin.command()
-    async def minstars(self, ctx, minstars: int):
+    async def minstars(self, ctx: commands.Context, minstars: int):
         user_cog = self.bot.get_cog('UserCog')
-        user_cog.star_threshold = minstars  # known type cheking error
+        assert isinstance(user_cog, UserCog)
+        user_cog.star_threshold = minstars
         await ctx.send(embed=info_msg(f"Set minimum stars to {minstars}"))
 
     # check if commands are locked
-    async def bot_check(self, ctx):
+    async def bot_check(self, ctx: commands.Context):
         if await self.bot.is_owner(ctx.author):
             return True
         return not self.locked

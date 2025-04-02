@@ -160,5 +160,37 @@
       }
     ],
     "usage": ["`.admin starboard #starboard-channel`"]
+  },
+
+  "admin-setrss": {
+    "hidden": true,
+    "cmd_desc": "Sets a new channel for the RSS feed to dump into",
+    "params": [
+      {
+        "name": "channel",
+        "optional": false,
+        "type": "positional",
+        "data_type": "text_channel",
+        "description": "The channel to set RSS feed dumps into",
+        "notes": "This must be a valid text channel."
+      }
+    ],
+    "usage": ["`.admin setrss #rss-channel`"]
+  },
+
+  "admin-addfeed": {
+    "hidden": true,
+    "cmd_desc": "Adds a URL to parse when updating the RSS feed.",
+    "params": [
+      {
+        "name": "url",
+        "optional": false,
+        "type": "positional",
+        "data_type": "str",
+        "description": "The URL to add to the list of feeds to update",
+        "notes": "This must be a valid RSS url."
+      }
+    ],
+    "usage": ["`.admin addfeed https://mywebsite.com/rss/blog`"]
   }
 }

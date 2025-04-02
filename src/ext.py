@@ -1,3 +1,4 @@
+import re
 import json
 import random
 import datetime
@@ -25,12 +26,12 @@ def info_msg(desc: str):
     a = discord.Embed(color=embed_color, title="Info", description=desc)
     return a
 
-def topic_msg(topics: List[str]):
+def topic_msg(topics: List[str]) -> discord.Embed:
     desc = "\n".join([f"{num}. {topic}" for num, topic in enumerate(topics)])
     a = discord.Embed(color=embed_color, title="Topics in queue:", description=desc)
     return a
 
-def loop_status(running: bool, next_run: datetime.datetime | None):
+def loop_status(running: bool, next_run: datetime.datetime | None) -> discord.Embed:
     if next_run:
         cst = timezone("America/Chicago")
         next_run = next_run.astimezone(cst)
@@ -41,6 +42,32 @@ def loop_status(running: bool, next_run: datetime.datetime | None):
     **Next Run**: {next_str}"
     a = discord.Embed(color=embed_color, title="Loop Status", description=desc)
     return a
+
+def rss_embed(
+        title: str,
+        desc: str,
+        link: str,
+        date: datetime.datetime
+    ) -> discord.Embed:
+    link_re = re.compile(r'<a\s+[^>]*href=["\'](.*?)["\'][^>]*>(.*?)</a>', re.IGNORECASE)
+    break_re = re.compile(r'<br\s*/?>', re.IGNORECASE)
+
+    # Function to replace match with Markdown format
+    def replacement(match):
+        url, text = match.groups()
+        return f'[{text}]({url})'
+
+    # Perform substitution
+    desc = break_re.sub("\n\n", desc)
+    desc = link_re.sub(replacement, desc)
+
+    return discord.Embed(
+        color=embed_color,
+        title=title,
+        description=desc,
+        timestamp=date,
+        url=link
+    )
 
 async def admin_dashboard(client, starttime: datetime.datetime):
     app_info = await client.application_info()

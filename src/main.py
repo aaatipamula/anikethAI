@@ -63,8 +63,10 @@ BaseModel.metadata.create_all(engine)
 
 @client.event
 async def on_ready():
-    await client.add_cog(admin_cog)
-    await client.add_cog(user_cog)
+    if 'AdminCog' not in client.cogs:
+        await client.add_cog(admin_cog)
+    if 'UserCog' not in client.cogs:
+        await client.add_cog(user_cog)
     print('AnikethAI is ready...')
     await admin_cog.set_status.start()
 
@@ -96,14 +98,13 @@ async def on_command_error(ctx, err):
     else:
         print(err)
         err_channel = client.get_channel(DUMP_CHANNEL)
-        if err_channel:
+        if err_channel and isinstance(err_channel, discord.TextChannel):
             # Known type checking error
             await err_channel.send(f"```Error: {err}\n\
                 Message: {ctx.message.content}\n\
                 Author: {ctx.author}\n\
                 Server: {ctx.message.guild}\n\
-                Link: {ctx.message.jump_url}\n\
-                Traceback: {''.join(tb.format_exception(None, err, err.__traceback__))}```")
+                Link: {ctx.message.jump_url}```")
 
 if __name__ == '__main__':
     client.run(TOKEN, log_handler=handler, log_formatter=formatter)
