@@ -3,10 +3,11 @@ from random import choice as randChoice
 from asyncio import sleep as asyncSleep
 
 from discord.ext import commands
-from discord import Message, Reaction, User, Member
+from discord import Message, Reaction, TextChannel, User, Member
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
+from util import random_messages
 from database import (
     get_user_mem,
     dump_user_mem,
@@ -17,7 +18,6 @@ from database import (
 from ext import (
     info_msg,
     cmd_error,
-    random_messages,
     star_message,
     topic_msg,
     help_command
@@ -60,7 +60,9 @@ class UserCog(commands.Cog):
 
     @property
     def starboard(self):
-        return self.bot.get_channel(self.starboard_id) if self.starboard_id else None
+        c = self.bot.get_channel(self.starboard_id or 0)
+        assert isinstance(c, TextChannel) or c is None
+        return c
 
     @commands.command()
     async def request(self, ctx, *, topic):

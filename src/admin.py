@@ -1,10 +1,8 @@
-import os
+import datetime as dt
 from time import gmtime, struct_time
-from datetime import datetime, timezone, time
 from asyncio import TimeoutError#, sleep as async_sleep
 from typing import List, Tuple
 
-import pytz
 import feedparser
 from discord import Game, TextChannel, Embed
 from discord.ext import commands, tasks
@@ -14,13 +12,10 @@ from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
 from users import UserCog
+from util import normalize_tz
 
-central_tz = pytz.timezone('America/Chicago')
-dt_obj = datetime.combine(datetime.today(), time(hour=10))
-central_time = central_tz.localize(dt_obj).timetz()
-
-UPDATE_WAIT = int(os.environ.get("UPDATE_WAIT", 18))
-RSS_UPDATE_TIME = central_time
+UPDATE_WAIT = 18
+RSS_UPDATE_TIMES = dt.time(hour=10)
 
 class AdminCog(commands.Cog):
     def __init__(
@@ -28,6 +23,8 @@ class AdminCog(commands.Cog):
         bot: commands.Bot, 
         topic_queue: TopicQueue,
         log_channel_id: int,
+        timezone: str,
+        start_time: int,
         # NOTE: Make the following environment variables
         confirmation_emote_id: int = 1136812895859134555, #:L_: emoji
         rss_feeds: List[str] | None = None
@@ -36,13 +33,19 @@ class AdminCog(commands.Cog):
         self.topic_queue = topic_queue
         self.log_channel_id = log_channel_id
         self.confim_emote_id = confirmation_emote_id
-        self.start_datetime = datetime.now()
-        self.locked = False
 
         # TODO: Persist RSS feeds to database/file
         self.rss_feeds = rss_feeds or ["https://www.autosport.com/rss/f1/news/"]
         self.rss_channel_id = log_channel_id # Default the RSS channel for now
         self.rss_last_updated = gmtime()
+
+        # Set state
+        self.start_datetime = dt.datetime.now()
+        self.locked = False
+
+        # Update globals
+        global RSS_UPDATE_TIMES
+        RSS_UPDATE_TIMES = normalize_tz(timezone, start_time)
 
     @property
     def log_channel(self):
@@ -79,10 +82,10 @@ class AdminCog(commands.Cog):
                 continue
 
             # NOTE: feedparser library is horribly typed
+            # TODO: Don't compare time tuples
             for entry in source.entries:
                 if entry.published_parsed > self.rss_last_updated:
-                    timestamp = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
-                    post = rss_embed(entry.title, entry.description, entry.link, timestamp)
+                    post = rss_embed(entry)
                     posts.insert(0, post)
                 else:
                     break # We can ignore the rest of the posts
@@ -98,7 +101,8 @@ class AdminCog(commands.Cog):
         game = Game(message)
         await self.bot.change_presence(activity=game)
 
-    @tasks.loop(time=RSS_UPDATE_TIME)
+    # NOTE: Possibly update every 6 hours
+    @tasks.loop(time=RSS_UPDATE_TIMES)
     async def update_rss_channel(self):
         try:
             posts, errs = self.get_rss_updates()
@@ -134,6 +138,7 @@ class AdminCog(commands.Cog):
             f_errs = ", ".join(errs)
             await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
 
+        # Only send 5 embeds at a time
         start = 0
         while start < len(posts):
             stop = start + 5 if start + 5 < len(posts) else len(posts)
@@ -144,7 +149,7 @@ class AdminCog(commands.Cog):
     @admin.command(name="setrss")
     async def set_rss_channel(self, ctx: commands.Context, chan: TextChannel):
         self.rss_channel_id = chan.id
-        await ctx.send(embed=info_msg(f"Set RSS channel to {chan}"))
+        await ctx.send(embed=info_msg(f"Set RSS channel to #{chan}"))
 
     @admin.command(name="addfeed")
     async def add_rss_feed(self, ctx: commands.Context, url: str):

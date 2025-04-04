@@ -3,7 +3,7 @@ import json
 import random
 import datetime
 from pytz import timezone
-from typing import Callable, List, Tuple
+from typing import List, Tuple
 from os.path import join, dirname
 
 import discord
@@ -43,12 +43,7 @@ def loop_status(running: bool, next_run: datetime.datetime | None) -> discord.Em
     a = discord.Embed(color=embed_color, title="Loop Status", description=desc)
     return a
 
-def rss_embed(
-        title: str,
-        desc: str,
-        link: str,
-        date: datetime.datetime
-    ) -> discord.Embed:
+def rss_embed(post: dict[str, str]) -> discord.Embed:
     link_re = re.compile(r'<a\s+[^>]*href=["\'](.*?)["\'][^>]*>(.*?)</a>', re.IGNORECASE)
     break_re = re.compile(r'<br\s*/?>', re.IGNORECASE)
 
@@ -58,16 +53,28 @@ def rss_embed(
         return f'[{text}]({url})'
 
     # Perform substitution
+    desc = post['description']
     desc = break_re.sub("\n\n", desc)
     desc = link_re.sub(replacement, desc)
 
-    return discord.Embed(
+    timestamp = datetime.datetime(*post['published_parsed'][:6], tzinfo=datetime.timezone.utc)
+
+    a = discord.Embed(
         color=embed_color,
-        title=title,
+        title=post.get('title', 'N/A'),
         description=desc,
-        timestamp=date,
-        url=link
+        timestamp=timestamp,
+        url=post.get('link'),
     )
+
+    for item in post.get('enclosures', []):
+        assert isinstance(item, dict)
+        if item.get('type', '').startswith('image/'):
+            a.set_image(url=item.get('url') or item.get('href') or item.get('src'))
+            break
+
+    return a
+
 
 async def admin_dashboard(client, starttime: datetime.datetime):
     app_info = await client.application_info()
@@ -162,12 +169,4 @@ def help_command(
         return format_command(opt, cmd), None # Known type checking error
 
     return bot_error("Not a valid command."), None
-
-def random_messages(
-    messages: List[Tuple[str, str | Callable[[], str], float]],
-    content: str
-):
-    for trigger, response, probability in messages:
-        if random.random() < probability and trigger in content:
-            yield response() if callable(response) else response
 

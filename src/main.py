@@ -1,7 +1,5 @@
 import os
 import sys
-import traceback as tb
-from datetime import datetime
 from os.path import join, dirname
 
 from users import UserCog
@@ -26,11 +24,12 @@ except FileNotFoundError:
     print(".env not found")
 
 # grab our env vars
-DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", ""))
 TOKEN = os.environ.get("TOKEN", "")
-COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
 ABOUT_ME = os.environ.get("ABOUT_ME", "")
-START_DATETIME = datetime.now()
+DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", "0"))
+COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
+TIMEZONE = os.environ.get("TIMEZONE", "")
+START_HOUR = int(os.environ.get("START_HOUR", "10"))
 
 # Declaring gateway intents, discord.py >= 2.0 feature
 intent = discord.Intents.default()
@@ -55,7 +54,7 @@ client = commands.Bot(
 )
 
 # create our cogs 
-admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL)
+admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, TIMEZONE, START_HOUR)
 user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, DUMP_CHANNEL)
 
 # Create the user db
