@@ -31,7 +31,7 @@ def topic_msg(topics: List[str]) -> discord.Embed:
     a = discord.Embed(color=embed_color, title="Topics in queue:", description=desc)
     return a
 
-def loop_status(running: bool, next_run: datetime.datetime | None) -> discord.Embed:
+def loop_status(name: str, running: bool, next_run: datetime.datetime | None) -> discord.Embed:
     if next_run:
         cst = timezone("America/Chicago")
         next_run = next_run.astimezone(cst)
@@ -40,7 +40,7 @@ def loop_status(running: bool, next_run: datetime.datetime | None) -> discord.Em
         next_str = None
     desc = f"**Running**: {running}\n\
     **Next Run**: {next_str}"
-    a = discord.Embed(color=embed_color, title="Loop Status", description=desc)
+    a = discord.Embed(color=embed_color, title=name, description=desc)
     return a
 
 def rss_embed(post: dict[str, str]) -> discord.Embed:

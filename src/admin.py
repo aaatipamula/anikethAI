@@ -12,10 +12,8 @@ from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
 from users import UserCog
-from util import normalize_tz
 
 UPDATE_WAIT = 18
-RSS_UPDATE_TIMES = dt.time(hour=10)
 
 class AdminCog(commands.Cog):
     def __init__(
@@ -23,8 +21,6 @@ class AdminCog(commands.Cog):
         bot: commands.Bot, 
         topic_queue: TopicQueue,
         log_channel_id: int,
-        timezone: str,
-        start_time: int,
         # NOTE: Make the following environment variables
         confirmation_emote_id: int = 1136812895859134555, #:L_: emoji
         rss_feeds: List[str] | None = None
@@ -42,10 +38,6 @@ class AdminCog(commands.Cog):
         # Set state
         self.start_datetime = dt.datetime.now()
         self.locked = False
-
-        # Update globals
-        global RSS_UPDATE_TIMES
-        RSS_UPDATE_TIMES = normalize_tz(timezone, start_time)
 
     @property
     def log_channel(self):
@@ -102,7 +94,7 @@ class AdminCog(commands.Cog):
         await self.bot.change_presence(activity=game)
 
     # NOTE: Possibly update every 6 hours
-    @tasks.loop(time=RSS_UPDATE_TIMES)
+    @tasks.loop()
     async def update_rss_channel(self):
         try:
             posts, errs = self.get_rss_updates()
@@ -176,11 +168,17 @@ class AdminCog(commands.Cog):
 
     @admin.command(name="statusl")
     async def status_loop(self, ctx: commands.Context):
-        embed = loop_status(
+        status_embed = loop_status(
+            "Status Updates",
             self.set_status.is_running(), 
             self.set_status.next_iteration
         )
-        await ctx.send(embed=embed)
+        rss_embed = loop_status(
+            "RSS Update Feed",
+            self.update_rss_channel.is_running(), 
+            self.update_rss_channel.next_iteration
+        )
+        await ctx.send(embeds=[status_embed, rss_embed])
 
     @admin.command(name="kill")
     async def kill_bot(self, ctx: commands.Context):

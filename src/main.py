@@ -6,6 +6,7 @@ from users import UserCog
 from admin import AdminCog
 from topicQueue import QueueError, TopicQueue
 from database import BaseModel, engine
+from util import normalize_tz
 from ext import (
     cmd_error,
     bot_error,
@@ -54,7 +55,7 @@ client = commands.Bot(
 )
 
 # create our cogs 
-admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, TIMEZONE, START_HOUR)
+admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL)
 user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, DUMP_CHANNEL)
 
 # Create the user db
@@ -66,8 +67,14 @@ async def on_ready():
         await client.add_cog(admin_cog)
     if 'UserCog' not in client.cogs:
         await client.add_cog(user_cog)
+    times = normalize_tz(TIMEZONE, START_HOUR)
+    admin_cog.update_rss_channel.change_interval(time=times)
+    print("Started status task.")
+    admin_cog.set_status.start()
+    print("Started RSS task.")
+    admin_cog.update_rss_channel.start()
     print('AnikethAI is ready...')
-    await admin_cog.set_status.start()
+
 
 # General error handling for all commands.
 # NOTE: Change this soon
