@@ -1,9 +1,10 @@
 import pytz
 import random
 from datetime import datetime, time
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Annotated
 
 MessageValues = Tuple[str, str | Callable[[], str], float]
+LowerStr = Annotated[str, lambda x: x.lower()]
 
 def random_messages(messages: List[MessageValues], content: str):
     for trigger, response, probability in messages:

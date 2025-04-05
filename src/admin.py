@@ -1,9 +1,7 @@
 import datetime as dt
-from time import gmtime, struct_time
 from asyncio import TimeoutError#, sleep as async_sleep
 from typing import List, Tuple
 
-from discord.utils import TimestampStyle
 import feedparser
 from discord import Game, TextChannel, Embed
 from discord.ext import commands, tasks
@@ -13,6 +11,7 @@ from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
 from users import UserCog
+from util import LowerStr
 
 UPDATE_WAIT = 18
 
@@ -54,7 +53,7 @@ class AdminCog(commands.Cog):
 
     @property
     def rss_channel(self):
-        c = self.bot.get_channel(self.log_channel_id)
+        c = self.bot.get_channel(self.rss_channel_id)
         assert isinstance(c, TextChannel) # Channel must be a text channel
         return c
 
@@ -102,7 +101,6 @@ class AdminCog(commands.Cog):
         game = Game(message)
         await self.bot.change_presence(activity=game)
 
-    # NOTE: Possibly update every 6 hours
     @tasks.loop()
     async def update_rss_channel(self):
         try:
@@ -156,22 +154,36 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg(f"Added URL: `{url}`"))
 
     @admin.command(name="stopl")
-    async def stop_loop(self, ctx: commands.Context):
-        if self.set_status.is_running():
-            self.set_status.cancel()
-        else:
-            await ctx.send(embed=cmd_error("Task is already stopped."))
+    async def stop_loop(self, ctx: commands.Context, task_name: LowerStr):
+        if task_name not in ('rss', 'status'):
+            await ctx.send(embed=cmd_error(f"{task_name} is not a valid task."))
             return
-        await ctx.send(embed=info_msg("Stopped updating status"))
+
+        if task_name == 'status' and self.set_status.is_running():
+            self.set_status.cancel()
+        elif task_name.lower() == 'rss' and self.update_rss_channel.is_running():
+            self.update_rss_channel.cancel()
+        else:
+            await ctx.send(embed=cmd_error(f"{task_name} task is already stopped."))
+            return
+
+        await ctx.send(embed=info_msg(f"Stopped updating {task_name}"))
 
     @admin.command(name="startl")
-    async def start_loop(self, ctx: commands.Context):
-        if self.set_status.is_running():
-            await ctx.send(embed=cmd_error("Task is already running."))
+    async def start_loop(self, ctx: commands.Context, task_name: LowerStr):
+        if task_name not in ('rss', 'status'):
+            await ctx.send(embed=cmd_error(f"{task_name} is not a valid task."))
             return
-        else:
+
+        if task_name == 'status' and not self.set_status.is_running():
             self.set_status.start()
-        await ctx.send(embed=info_msg("Started updating status."))
+        elif task_name == 'rss' and not self.update_rss_channel.is_running():
+            self.update_rss_channel.start()
+        else:
+            await ctx.send(embed=cmd_error(f"{task_name} task is already running."))
+            return
+
+        await ctx.send(embed=info_msg(f"Started updating {task_name}."))
 
     @admin.command(name="statusl")
     async def status_loop(self, ctx: commands.Context):
@@ -233,12 +245,12 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg(f"Set minimum stars to {minstars}"))
 
     # check if commands are locked
-    async def bot_check(self, ctx: commands.Context):
+    async def bot_check(self, ctx) #type: ignore
         if await self.bot.is_owner(ctx.author):
             return True
         return not self.locked
 
     # checks if the author is the owner
-    async def cog_check(self, ctx):
+    async def cog_check(self, ctx): # type: ignore
         return await self.bot.is_owner(ctx.author)
 

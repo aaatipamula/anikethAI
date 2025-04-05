@@ -92,19 +92,28 @@
     "hidden": true,
     "cmd_desc": "Starts the daily message loop.",
     "params": null,
-    "usage": ["`.admin startl`"]
+    "usage": ["`.admin startl rss`", "`.admin startl status`"]
   },
 
   "admin-stopl": {
     "hidden": true,
-    "cmd_desc": "Starts the daily message loop.",
-    "params": null,
-    "usage": ["`.admin stopl`"]
+    "cmd_desc": "Starts a task loop.",
+    "params": [
+      {
+        "name": "task_name",
+        "optional": false,
+        "type": "positional",
+        "data_type": "str",
+        "description": "The task to start or stop.",
+        "notes": "Must be one of `rss` or `status`."
+      }
+    ],
+    "usage": ["`.admin stopl rss`", "`.admin stopl status`"]
   },
 
   "admin-statusl": {
     "hidden": true,
-    "cmd_desc": "Displays a message which gives the status of the daily message loop.",
+    "cmd_desc": "Displays a message which gives the status of all task loops.",
     "params": null,
     "usage": ["`.admin statusl`"]
   },
@@ -160,6 +169,38 @@
       }
     ],
     "usage": ["`.admin starboard #starboard-channel`"]
+  },
+
+  "admin-getrss": {
+    "hidden": true,
+    "cmd_desc": "Updates the RSS channel from some time ago.",
+    "params": [
+      {
+        "name": "days",
+        "optional": true,
+        "type": "keyword",
+        "data_type": "int",
+        "description": "How many days ago to pull posts from",
+        "notes": "Defaults to 0"
+      },
+      {
+        "name": "hours",
+        "optional": true,
+        "type": "keyword",
+        "data_type": "int",
+        "description": "How many hours ago to pull posts from",
+        "notes": "Defaults to 12"
+      },
+      {
+        "name": "minutes",
+        "optional": true,
+        "type": "keyword",
+        "data_type": "int",
+        "description": "How many hours ago to pull posts from",
+        "notes": "Defaults to 0"
+      }
+    ],
+    "usage": ["`.admin getrss`", "`.admin getrss days=1 minutes=3`"]
   },
 
   "admin-setrss": {
