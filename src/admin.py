@@ -245,7 +245,7 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg(f"Set minimum stars to {minstars}"))
 
     # check if commands are locked
-    async def bot_check(self, ctx) #type: ignore
+    async def bot_check(self, ctx): #type: ignore
         if await self.bot.is_owner(ctx.author):
             return True
         return not self.locked
