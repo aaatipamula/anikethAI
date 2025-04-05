@@ -10,8 +10,6 @@ OPENAI_API_KEY="openai_key"
 COMMAND_PREFIX="!"
 DUMP_CHANNEL="channel_id"
 ABOUT_ME="Some about me..."
-
-# optional
-UPDATE_WAIT="hours_to_wait_between_status_change" # defaults to 18 hours
-CONFIM_EMOTE_ID="emote_id" # used to confirm killing the bot
+TIMEZONE="pytz_timezone"
+START_HOUR="[0, 24]"
 ```

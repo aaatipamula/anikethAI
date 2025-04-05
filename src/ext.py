@@ -43,7 +43,7 @@ def loop_status(name: str, running: bool, next_run: datetime.datetime | None) ->
     a = discord.Embed(color=embed_color, title=name, description=desc)
     return a
 
-def rss_embed(post: dict[str, str]) -> discord.Embed:
+def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Embed:
     link_re = re.compile(r'<a\s+[^>]*href=["\'](.*?)["\'][^>]*>(.*?)</a>', re.IGNORECASE)
     break_re = re.compile(r'<br\s*/?>', re.IGNORECASE)
 
@@ -56,8 +56,6 @@ def rss_embed(post: dict[str, str]) -> discord.Embed:
     desc = post['description']
     desc = break_re.sub("\n\n", desc)
     desc = link_re.sub(replacement, desc)
-
-    timestamp = datetime.datetime(*post['published_parsed'][:6], tzinfo=datetime.timezone.utc)
 
     a = discord.Embed(
         color=embed_color,

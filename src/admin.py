@@ -3,6 +3,7 @@ from time import gmtime, struct_time
 from asyncio import TimeoutError#, sleep as async_sleep
 from typing import List, Tuple
 
+from discord.utils import TimestampStyle
 import feedparser
 from discord import Game, TextChannel, Embed
 from discord.ext import commands, tasks
@@ -14,6 +15,12 @@ from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
 from users import UserCog
 
 UPDATE_WAIT = 18
+
+# Defaults to 12 hours ago
+class TimeFlags(commands.FlagConverter):
+    days: int = 0
+    hours: int = 12
+    minutes: int = 0
 
 class AdminCog(commands.Cog):
     def __init__(
@@ -33,7 +40,7 @@ class AdminCog(commands.Cog):
         # TODO: Persist RSS feeds to database/file
         self.rss_feeds = rss_feeds or ["https://www.autosport.com/rss/f1/news/"]
         self.rss_channel_id = log_channel_id # Default the RSS channel for now
-        self.rss_last_updated = gmtime()
+        self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
 
         # Set state
         self.start_datetime = dt.datetime.now()
@@ -57,15 +64,17 @@ class AdminCog(commands.Cog):
         assert e is not None
         return e
 
-    def get_rss_updates(self, days_ago: int | None = None) -> Tuple[List[Embed], List[str]]:
+    def get_rss_updates(self, time_flags: TimeFlags | None = None) -> Tuple[List[Embed], List[str]]:
         posts = []
         invalid_urls = []
 
-        # Set last updated to n days ago
-        if days_ago:
-            t = list(self.rss_last_updated)
-            t[2] -= days_ago
-            self.rss_last_updated = struct_time(t)
+        # Some time ago...
+        if time_flags:
+            self.rss_last_updated -= dt.timedelta(
+                days=time_flags.days,
+                hours=time_flags.hours,
+                minutes=time_flags.minutes
+            )
 
         for url in self.rss_feeds:
             source = feedparser.parse(url)
@@ -74,15 +83,15 @@ class AdminCog(commands.Cog):
                 continue
 
             # NOTE: feedparser library is horribly typed
-            # TODO: Don't compare time tuples
             for entry in source.entries:
-                if entry.published_parsed > self.rss_last_updated:
-                    post = rss_embed(entry)
+                published_dt = dt.datetime(*entry['published_parsed'][:6], tzinfo=dt.timezone.utc)
+                if published_dt >= self.rss_last_updated:
+                    post = rss_embed(entry, published_dt)
                     posts.insert(0, post)
                 else:
                     break # We can ignore the rest of the posts
 
-        self.rss_last_updated = gmtime()
+        self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
         return posts, invalid_urls
 
     @tasks.loop(hours=UPDATE_WAIT)
@@ -119,9 +128,9 @@ class AdminCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @admin.command(name="getrss")
-    async def get_rss_from(self, ctx: commands.Context, days_ago: int):
+    async def get_rss_from(self, _: commands.Context, time_flags: TimeFlags):
         try:
-            posts, errs = self.get_rss_updates(days_ago)
+            posts, errs = self.get_rss_updates(time_flags)
         except AttributeError as err:
             await self.log_channel.send(embed=cmd_error(f"There was an error grabbing some post information:\n\n{err}"))
             return
@@ -130,12 +139,10 @@ class AdminCog(commands.Cog):
             f_errs = ", ".join(errs)
             await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
 
-        # Only send 5 embeds at a time
         start = 0
         while start < len(posts):
             stop = start + 5 if start + 5 < len(posts) else len(posts)
-            await ctx.send(embeds=posts[start:stop])
-            # NOTE: async_sleep(0.45)
+            await self.rss_channel.send(embeds=posts[start:stop])
             start = stop
 
     @admin.command(name="setrss")
