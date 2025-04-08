@@ -91,7 +91,16 @@
   "admin-startl": {
     "hidden": true,
     "cmd_desc": "Starts the daily message loop.",
-    "params": null,
+    "params": [
+      {
+        "name": "task_name",
+        "optional": false,
+        "type": "positional",
+        "data_type": "str",
+        "description": "The task to start or stop.",
+        "notes": "Must be one of `rss` or `status`."
+      }
+    ],
     "usage": ["`.admin startl rss`", "`.admin startl status`"]
   },
 
