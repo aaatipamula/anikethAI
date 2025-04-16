@@ -38,10 +38,17 @@ intent.message_content = True
 intent.reactions = True
 intent.members = True
 
-# log to stdout without color
-handler = logging.StreamHandler(stream=sys.stdout)
+# Set up logging
 dt_fmt = '%Y-%m-%d %H:%M:%S'
 formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+handler = logging.StreamHandler(stream=sys.stdout)
+handler.setFormatter(formatter)
+
+bot_logger = logging.getLogger('discord.bot')
+bot_logger.setLevel(logging.DEBUG)
+
+if not bot_logger.hasHandlers():
+    bot_logger.addHandler(handler)
 
 # Create a global queue
 GLOBAL_QUEUE = TopicQueue()
@@ -62,18 +69,22 @@ user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, DUMP_CHANNEL)
 BaseModel.metadata.create_all(engine)
 
 @client.event
+
 async def on_ready():
     if 'AdminCog' not in client.cogs:
         await client.add_cog(admin_cog)
     if 'UserCog' not in client.cogs:
         await client.add_cog(user_cog)
+
     times = normalize_tz(TIMEZONE, START_HOUR)
     admin_cog.update_rss_channel.change_interval(time=times)
-    print("Started status task.")
-    admin_cog.set_status.start()
-    print("Started RSS task.")
     admin_cog.update_rss_channel.start()
-    print('AnikethAI is ready...')
+    bot_logger.info("Started RSS task.")
+
+    admin_cog.set_status.start()
+    bot_logger.info("Started status task.")
+
+    bot_logger.info('AnikethAI is ready...')
 
 
 # General error handling for all commands.
@@ -113,4 +124,5 @@ async def on_command_error(ctx, err):
                 Link: {ctx.message.jump_url}```")
 
 if __name__ == '__main__':
+
     client.run(TOKEN, log_handler=handler, log_formatter=formatter)

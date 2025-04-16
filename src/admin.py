@@ -1,3 +1,4 @@
+import logging
 import datetime as dt
 from asyncio import TimeoutError#, sleep as async_sleep
 from typing import List, Tuple
@@ -35,6 +36,7 @@ class AdminCog(commands.Cog):
         self.topic_queue = topic_queue
         self.log_channel_id = log_channel_id
         self.confim_emote_id = confirmation_emote_id
+        self.logger = logging.getLogger('discord.bot')
 
         # TODO: Persist RSS feeds to database/file
         self.rss_feeds = rss_feeds or ["https://www.autosport.com/rss/f1/news/"]
@@ -118,6 +120,8 @@ class AdminCog(commands.Cog):
             stop = start + 5 if start + 5 < len(posts) else len(posts)
             await self.rss_channel.send(embeds=posts[start:stop])
             start = stop
+
+        self.logger.info(f"Sent {len(posts)} to #{self.rss_channel}")
 
     @commands.group(pass_context=True)
     async def admin(self, ctx: commands.Context):
