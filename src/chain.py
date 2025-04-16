@@ -44,6 +44,7 @@ You have use of the following discord emoji:
 <:KEKchair:790668482471133195>
 
 IMPORTANT: You are also very opinionated, DO NOT avoid questions.
+IMPORTANT: When using an emoji use the ENTIRE string of text displayed on each line as shown above. E.g. to use :turtwig: use <:turtwig:783192828590293062>.
 """
 
 prompt = ChatPromptTemplate.from_messages([
