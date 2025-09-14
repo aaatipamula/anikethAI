@@ -7,6 +7,7 @@ import feedparser
 from discord import Game, TextChannel, Embed
 from discord.ext import commands, tasks
 from langchain.memory import ConversationBufferWindowMemory
+from openai.error import RateLimitError
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -85,7 +86,7 @@ class AdminCog(commands.Cog):
 
             # NOTE: feedparser library is horribly typed
             for entry in source.entries:
-                published_dt = dt.datetime(*entry['published_parsed'][:6], tzinfo=dt.timezone.utc)
+                published_dt = dt.datetime(*entry['published_parsed'][:6], tzinfo=dt.timezone.utc) # type: ignore
                 if published_dt >= self.rss_last_updated:
                     post = rss_embed(entry, published_dt)
                     posts.insert(0, post)
@@ -99,7 +100,10 @@ class AdminCog(commands.Cog):
     async def set_status(self):
         chain = create_aniketh_ai(ConversationBufferWindowMemory(return_messages=True))
         topic = self.topic_queue.pick_topic()
-        message = chain.predict(user_message=f"Write a short (5-6 word) sentence on {topic}")
+        try:
+            message = chain.predict(user_message=f"Write a short (5-6 word) sentence on {topic}")
+        except RateLimitError:
+            message = "I require sustenance 😐"
         game = Game(message)
         await self.bot.change_presence(activity=game)
 

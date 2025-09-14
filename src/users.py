@@ -4,6 +4,7 @@ from asyncio import sleep as asyncSleep
 
 from discord.ext import commands
 from discord import Message, Reaction, TextChannel, User, Member
+from openai.error import RateLimitError
 
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
@@ -120,7 +121,10 @@ class UserCog(commands.Cog):
             async with message.channel.typing():
                 mem = get_user_mem(message.channel.id) # Use channel ids to gather messages
                 chain = create_aniketh_ai(mem)
-                msg = chain.predict(user_message=message.clean_content)
+                try:
+                    msg = chain.predict(user_message=message.clean_content)
+                except RateLimitError:
+                    msg = randChoice(("You ran out of tokens 😔", "Feed me."))
                 dump_user_mem(message.channel.id, mem)
             await message.channel.send(msg)
 

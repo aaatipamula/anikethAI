@@ -124,5 +124,4 @@ async def on_command_error(ctx, err):
                 Link: {ctx.message.jump_url}```")
 
 if __name__ == '__main__':
-
     client.run(TOKEN, log_handler=handler, log_formatter=formatter)
