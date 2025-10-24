@@ -178,12 +178,12 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg(f"Added URL: `{url}`"))
 
     @admin.command(name="syncrss")
-    async def persist_rss_feed (self, ctx: commands.Contxet):
+    async def persist_rss_feed (self, ctx: commands.Context):
         self.write_rss_file()
         await ctx.send(embed=info_msg("Synced RSS feeds to disk."))
 
     @admin.command(name="listfeeds")
-    async def list_rss_feeds(self, ctx: commands.Contxet):
+    async def list_rss_feeds(self, ctx: commands.Context):
         await ctx.send(embed=info_msg("\n".join(self.rss_feeds)))
 
     @admin.command(name="stopl")
