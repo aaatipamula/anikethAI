@@ -15,7 +15,7 @@ from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
 from users import UserCog
 from util import LowerStr
 
-UPDATE_WAIT = 18
+UPDATE_WAIT = 4  # How long to wait in-between RSS updates
 
 # Defaults to 12 hours ago
 class TimeFlags(commands.FlagConverter):
@@ -29,6 +29,8 @@ class AdminCog(commands.Cog):
         bot: commands.Bot, 
         topic_queue: TopicQueue,
         log_channel_id: int,
+        rss_file: str,
+        *,
         # NOTE: Make the following environment variables
         confirmation_emote_id: int = 1136812895859134555, #:L_: emoji
         rss_feeds: List[str] | None = None
@@ -40,9 +42,11 @@ class AdminCog(commands.Cog):
         self.logger = logging.getLogger('discord.bot')
 
         # TODO: Persist RSS feeds to database/file
-        self.rss_feeds = rss_feeds or ["https://www.autosport.com/rss/f1/news/"]
+        self.rss_file = rss_file
+        self.rss_feeds = []
         self.rss_channel_id = log_channel_id # Default the RSS channel for now
         self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
+        self.read_rss_file()
 
         # Set state
         self.start_datetime = dt.datetime.now()
@@ -65,6 +69,17 @@ class AdminCog(commands.Cog):
         e = self.bot.get_emoji(self.confim_emote_id)
         assert e is not None
         return e
+
+    def read_rss_file(self):
+        with open(self.rss_file, "r") as f:
+            for line in f:
+                line.strip()
+                self.rss_feeds.append(line)
+
+    def write_rss_file(self):
+        with open(self.rss_file, "w") as f:
+            f.write("\n".join(self.rss_feeds))
+
 
     def get_rss_updates(self, time_flags: TimeFlags | None = None) -> Tuple[List[Embed], List[str]]:
         posts = []
@@ -159,7 +174,17 @@ class AdminCog(commands.Cog):
     @admin.command(name="addfeed")
     async def add_rss_feed(self, ctx: commands.Context, url: str):
         self.rss_feeds.append(url)
+        self.write_rss_file()
         await ctx.send(embed=info_msg(f"Added URL: `{url}`"))
+
+    @admin.command(name="syncrss")
+    async def persist_rss_feed (self, ctx: commands.Contxet):
+        self.write_rss_file()
+        await ctx.send(embed=info_msg("Synced RSS feeds to disk."))
+
+    @admin.command(name="listfeeds")
+    async def list_rss_feeds(self, ctx: commands.Contxet):
+        await ctx.send(embed=info_msg("\n".join(self.rss_feeds)))
 
     @admin.command(name="stopl")
     async def stop_loop(self, ctx: commands.Context, task_name: LowerStr):

@@ -44,19 +44,26 @@ def loop_status(name: str, running: bool, next_run: datetime.datetime | None) ->
     return a
 
 def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Embed:
+    paragraph_re = re.compile(r'<p>(.*?)</p>', re.IGNORECASE)
     link_re = re.compile(r'<a\s+[^>]*href=["\'](.*?)["\'][^>]*>(.*?)</a>', re.IGNORECASE)
     break_re = re.compile(r'<br\s*/?>', re.IGNORECASE)
 
-    # Function to replace match with Markdown format
-    def replacement(match):
+    # Functions to replace match with Markdown format
+    def replace_link(match: re.Match[str]) -> str:
         url, text = match.groups()
         return f'[{text}]({url})'
+
+    def replace_paragraph(match: re.Match[str]) -> str:
+        text, = match.groups()
+        return text
 
     # Perform substitution
     desc = post['description']
     desc = break_re.sub("\n\n", desc)
-    desc = link_re.sub(replacement, desc)
+    desc = link_re.sub(replace_link, desc)
+    desc = paragraph_re.sub(replace_paragraph, desc)
 
+    # Create the discord embed
     a = discord.Embed(
         color=embed_color,
         title=post.get('title', 'N/A'),
@@ -65,6 +72,7 @@ def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Emb
         url=post.get('link'),
     )
 
+    # Get Object items
     for item in post.get('enclosures', []):
         assert isinstance(item, dict)
         if item.get('type', '').startswith('image/'):
@@ -72,7 +80,6 @@ def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Emb
             break
 
     return a
-
 
 async def admin_dashboard(client, starttime: datetime.datetime):
     app_info = await client.application_info()
@@ -112,7 +119,7 @@ def star_message(message: discord.Message, count: int):
     return a
 
 # format the help embed for specific command
-def format_command(name: str, command: dict) -> discord.Embed:
+def format_command(name: str, command: dict, prefix: str) -> discord.Embed:
     opts = [param['name'] for param in command['params']] if command['params'] else []
     cmdEmbed = discord.Embed(
         title=f"{name} ({', '.join(opts)})",
@@ -126,10 +133,14 @@ def format_command(name: str, command: dict) -> discord.Embed:
                 **Optional**: {param['optional']}\n\
                 **Description**: {param['description']}"
             if param.get("notes"):
-                value_format += f"\n*Notes*: {param['notes']}"
+                value_format += f"\n**Notes**: {param['notes']}"
             cmdEmbed.add_field(name=param["name"], value=value_format)
 
-    cmdEmbed.add_field(name="Usage:", value="\n".join(command["usage"]), inline=False)
+    usageStr = ""
+    for usage in command["usage"]:
+        usageStr += f"`{prefix}{usage}`\n"
+
+    cmdEmbed.add_field(name="Usage:", value=usageStr, inline=False)
 
     return cmdEmbed
 
@@ -164,7 +175,7 @@ def help_command(
 
     elif opt in commands:
         cmd = commands.get(opt, "")
-        return format_command(opt, cmd), None # Known type checking error
+        return format_command(opt, cmd, command_prefix), None # Known type checking error
 
     return bot_error("Not a valid command."), None
 
