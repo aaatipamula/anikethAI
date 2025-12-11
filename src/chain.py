@@ -61,7 +61,7 @@ def create_aniketh_ai(
     """Create a chain to craft a response similar to me"""
 
     verbose = verbose if verbose else False
-    llm = ChatOpenAI(temperature=temperature, model="gpt-4o-mini") # Known missing param
+    llm = ChatOpenAI(temperature=temperature, model="gpt-4o-mini", max_retries=1) # Known missing param
     chain = LLMChain(
         llm=llm,
         verbose=verbose,

@@ -51,6 +51,8 @@ def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Emb
     # Functions to replace match with Markdown format
     def replace_link(match: re.Match[str]) -> str:
         url, text = match.groups()
+        if text == url:
+            return url
         return f'[{text}]({url})'
 
     def replace_paragraph(match: re.Match[str]) -> str:

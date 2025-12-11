@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import Message, Reaction, TextChannel, User, Member
 from openai.error import RateLimitError
 
+from consts import NO_TOKENS, RANDOM_REPLYS
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from util import random_messages
@@ -23,22 +24,6 @@ from ext import (
     topic_msg,
     help_command
 )
-
-khaledisms = [
-    "We da best music :fire:",
-    "God did.",
-    "Tell 'em to bring out the whole ocean!",
-    "DEEEJAAAYYY KKKKHHHAAALLLLLLLEEEEEED",
-    "They ain't believe in us."
- ]
-
-random_replys = [
-    ("america ya", "HALLO! <a:wave:1004493976201592993>", 1.0),
-    ("balls", "balls mentioned 🔥🔥🔥", 0.45),
-    ("merica", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.45),
-    ("freedom", "🦅🦅:flag_us::flag_us:💥💥SOMEONE SAY FREEDOM?!💥💥:flag_us::flag_us:🦅🦅", 0.2),
-    ("believe", lambda: randChoice(khaledisms), 0.4)
-]
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
@@ -124,11 +109,11 @@ class UserCog(commands.Cog):
                 try:
                     msg = chain.predict(user_message=message.clean_content)
                 except RateLimitError:
-                    msg = randChoice(("You ran out of tokens 😔", "Feed me."))
+                    msg = randChoice(NO_TOKENS)
                 dump_user_mem(message.channel.id, mem)
             await message.channel.send(msg)
 
-        for reply_message in random_messages(random_replys, message.content):
+        for reply_message in random_messages(RANDOM_REPLYS, message.content):
             await message.reply(reply_message, mention_author=False)
             await asyncSleep(0.5)
 
