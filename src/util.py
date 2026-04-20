@@ -6,10 +6,12 @@ from typing import List, Tuple, Callable, Annotated
 MessageValues = Tuple[str, str | Callable[[], str], float]
 LowerStr = Annotated[str, lambda x: x.lower()]
 
+
 def random_messages(messages: List[MessageValues], content: str):
     for trigger, response, probability in messages:
         if random.random() < probability and trigger in content:
             yield response() if callable(response) else response
+
 
 def normalize_tz(timezone: str, start_hour: int):
     try:
@@ -27,4 +29,3 @@ def normalize_tz(timezone: str, start_hour: int):
         time(hour=(start_hour + 12) % 24, tzinfo=local_tzinfo),
         time(hour=(start_hour + 18) % 24, tzinfo=local_tzinfo),
     )
-

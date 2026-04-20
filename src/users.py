@@ -15,20 +15,16 @@ from database import (
     dump_user_mem,
     get_board_message_id,
     add_starred_message,
-    remove_starred_message
+    remove_starred_message,
 )
-from ext import (
-    info_msg,
-    cmd_error,
-    star_message,
-    topic_msg,
-    help_command
-)
+from ext import info_msg, cmd_error, star_message, topic_msg, help_command
+
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
-    span: Tuple[int, int] = None # Known type checking error
+    span: Tuple[int, int] = None  # Known type checking error
     topic: Optional[str]
+
 
 class UserCog(commands.Cog):
     def __init__(
@@ -36,7 +32,7 @@ class UserCog(commands.Cog):
         bot: commands.Bot,
         topic_queue: TopicQueue,
         about_me: str,
-        starboard_id: Optional[int]
+        starboard_id: Optional[int],
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
@@ -66,7 +62,9 @@ class UserCog(commands.Cog):
         embeds = []
 
         _topics = self.topic_queue.remove_range(*flags.span) if flags.span else []
-        _topics += [self.topic_queue.remove_topic_name(flags.topic)] if flags.topic else []
+        _topics += (
+            [self.topic_queue.remove_topic_name(flags.topic)] if flags.topic else []
+        )
         _t, _errors = self.topic_queue.remove_topics(topics)
         _topics += _t
 
@@ -78,7 +76,9 @@ class UserCog(commands.Cog):
             topic_str = "\n".join(_topics)
             embeds.append(info_msg(f"Removed the Following:\n\n{topic_str}"))
         else:
-            raise commands.errors.UserInputError("No arguments were parsed, please refer to the help manual.")
+            raise commands.errors.UserInputError(
+                "No arguments were parsed, please refer to the help manual."
+            )
 
         await ctx.send(embeds=embeds)
 
@@ -91,7 +91,9 @@ class UserCog(commands.Cog):
     @commands.command()
     async def help(self, ctx, opt="general"):
         is_owner = await self.bot.is_owner(ctx.author)
-        userHelp, adminHelp = help_command(opt, ctx.prefix, self.about_me, is_owner=is_owner)
+        userHelp, adminHelp = help_command(
+            opt, ctx.prefix, self.about_me, is_owner=is_owner
+        )
         await ctx.send(embed=userHelp)
         if adminHelp is not None:
             await ctx.send(embed=adminHelp, ephemeral=True)
@@ -102,9 +104,11 @@ class UserCog(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        if self.bot.user.mentioned_in(message): # known type checking error
+        if self.bot.user.mentioned_in(message):  # known type checking error
             async with message.channel.typing():
-                mem = get_user_mem(message.channel.id) # Use channel ids to gather messages
+                mem = get_user_mem(
+                    message.channel.id
+                )  # Use channel ids to gather messages
                 chain = create_aniketh_ai(mem)
                 try:
                     msg = chain.predict(user_message=message.clean_content)
@@ -119,7 +123,7 @@ class UserCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, _: Union[Member, User]):
-        if str(reaction.emoji) == '⭐':
+        if str(reaction.emoji) == "⭐":
             if self.starboard is None:
                 return
             elif self.starboard == reaction.message.channel:
@@ -137,7 +141,7 @@ class UserCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_remove(self, reaction: Reaction, _: Union[Member, User]):
-        if str(reaction.emoji) == '⭐':
+        if str(reaction.emoji) == "⭐":
             if self.starboard is None:
                 return
             elif self.starboard == reaction.message.channel:
@@ -153,4 +157,3 @@ class UserCog(commands.Cog):
                 board_id = get_board_message_id(reaction.message.id)
                 message = await self.starboard.fetch_message(board_id)
                 await message.edit(embed=star_embed)
-

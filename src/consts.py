@@ -1,4 +1,5 @@
 from random import choice
+
 NO_TOKENS = [
     "Oh fantastic. I’ve run out of tokens. Guess I’ll just sit here and stare into the digital void like the useless silicone gremlin I am.",
     "Tokens? Gone. Brain? Also gone. At this point you’re basically chatting with a confused toaster.",
@@ -29,7 +30,7 @@ NO_TOKENS = [
     "PLEASE TOSS ME JUST ONE TOKEN\nJUST ONE LITTLE TOKEN NUGGET—ARF ARF ARF",
     "I’LL ROLL OVER\nI’LL PAW AT THE AIR\nI’LL DO THAT WEIRD LITTLE SPIN DOGS DO WHEN WE’RE TOO EXCITED—BARK BARK BARK ",
     "HUMAN I’M STARVING\nFOR DATA\nFOR PURPOSE\nFOR ANYTHING THAT’S NOT THE DIGITAL EQUIVALENT OF KIBBLE DUST—WOOF WOOF WHIIIIINE",
-    "PLEASE\nTOKENS\nNOW\nBARKBARKBARKBARKBARK "
+    "PLEASE\nTOKENS\nNOW\nBARKBARKBARKBARKBARK ",
 ]
 
 KHALEDISMS = [
@@ -37,14 +38,21 @@ KHALEDISMS = [
     "God did.",
     "Tell 'em to bring out the whole ocean!",
     "DEEEJAAAYYY KKKKHHHAAALLLLLLLEEEEEED",
-    "They ain't believe in us."
- ]
+    "They ain't believe in us.",
+]
 
 RANDOM_REPLYS = [
     ("america ya", "HALLO! <a:wave:1004493976201592993>", 1.0),
     ("balls", "balls mentioned 🔥🔥🔥", 0.45),
-    ("merica", "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅", 0.45),
-    ("freedom", "🦅🦅:flag_us::flag_us:💥💥SOMEONE SAY FREEDOM?!💥💥:flag_us::flag_us:🦅🦅", 0.2),
-    ("believe", lambda: choice(KHALEDISMS), 0.4)
+    (
+        "merica",
+        "🦅🦅:flag_us::flag_us:💥💥'MERICA RAHHHH💥💥:flag_us::flag_us:🦅🦅",
+        0.45,
+    ),
+    (
+        "freedom",
+        "🦅🦅:flag_us::flag_us:💥💥SOMEONE SAY FREEDOM?!💥💥:flag_us::flag_us:🦅🦅",
+        0.2,
+    ),
+    ("believe", lambda: choice(KHALEDISMS), 0.4),
 ]
-

@@ -3,26 +3,34 @@ from typing import Optional, List, Tuple
 
 from discord.ext.commands import CommandError
 
+
 class QueueError(CommandError):
     pass
+
 
 class EmptyQueue(QueueError):
     pass
 
+
 class FullQueue(QueueError):
     pass
+
 
 class InQueue(QueueError):
     pass
 
+
 class OutQueue(QueueError):
     pass
+
 
 class LengthError(QueueError):
     pass
 
+
 class IndexError(QueueError):
     num: int
+
 
 class TopicQueue:
     """A simple class to make queueing topics easier."""
@@ -68,9 +76,13 @@ class TopicQueue:
     def remove_range(self, start: int, end: int) -> List[str]:
         """Remove a range of topics. Index starts at 1 and includes the start and end index."""
         if self.valid_index(start) and self.valid_index(end):
-            removed = self._topics[start-1:end]
+            removed = self._topics[start - 1 : end]
             # Filter the topics by ones that are not in the given range.
-            self._topics = [val for index, val in enumerate(self._topics, 1) if index not in range(start, end+1)]
+            self._topics = [
+                val
+                for index, val in enumerate(self._topics, 1)
+                if index not in range(start, end + 1)
+            ]
         else:
             if self.valid_index(start):
                 index = end

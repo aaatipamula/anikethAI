@@ -3,7 +3,11 @@ from typing import Optional
 from langchain.chains import LLMChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder
+from langchain.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
 from langchain.schema import SystemMessage
 
 # NOTE: Modify to change behavior of AI
@@ -47,27 +51,26 @@ IMPORTANT: You are also very opinionated, DO NOT avoid questions.
 IMPORTANT: When using an emoji use the ENTIRE string of text displayed on each line as shown above. E.g. to use :turtwig: use <:turtwig:783192828590293062>.
 """
 
-prompt = ChatPromptTemplate.from_messages([
-    SystemMessage(content=system_msg),
-    MessagesPlaceholder(variable_name="history"),
-    HumanMessagePromptTemplate.from_template("{user_message}")
-])
+prompt = ChatPromptTemplate.from_messages(
+    [
+        SystemMessage(content=system_msg),
+        MessagesPlaceholder(variable_name="history"),
+        HumanMessagePromptTemplate.from_template("{user_message}"),
+    ]
+)
+
 
 def create_aniketh_ai(
     memory: ConversationBufferWindowMemory,
     temperature: Optional[float] = 0.7,
-    verbose: Optional[bool] = None
+    verbose: Optional[bool] = None,
 ) -> LLMChain:
     """Create a chain to craft a response similar to me"""
 
     verbose = verbose if verbose else False
-    llm = ChatOpenAI(temperature=temperature, model="gpt-4o-mini", max_retries=1) # Known missing param
-    chain = LLMChain(
-        llm=llm,
-        verbose=verbose,
-        prompt=prompt,
-        memory=memory
-    )
+    llm = ChatOpenAI(
+        temperature=temperature, model="gpt-4o-mini", max_retries=1
+    )  # Known missing param
+    chain = LLMChain(llm=llm, verbose=verbose, prompt=prompt, memory=memory)
 
     return chain
-

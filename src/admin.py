@@ -1,6 +1,6 @@
 import logging
 import datetime as dt
-from asyncio import TimeoutError#, sleep as async_sleep
+from asyncio import TimeoutError  # , sleep as async_sleep
 from typing import List, Tuple
 
 import feedparser
@@ -17,34 +17,36 @@ from util import LowerStr
 
 UPDATE_WAIT = 4  # How long to wait in-between RSS updates
 
+
 # Defaults to 12 hours ago
 class TimeFlags(commands.FlagConverter):
     days: int = 0
     hours: int = 12
     minutes: int = 0
 
+
 class AdminCog(commands.Cog):
     def __init__(
-        self, 
-        bot: commands.Bot, 
+        self,
+        bot: commands.Bot,
         topic_queue: TopicQueue,
         log_channel_id: int,
         rss_file: str,
         *,
         # NOTE: Make the following environment variables
-        confirmation_emote_id: int = 1136812895859134555, #:L_: emoji
-        rss_feeds: List[str] | None = None
+        confirmation_emote_id: int = 1136812895859134555,  #:L_: emoji
+        rss_feeds: List[str] | None = None,
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
         self.log_channel_id = log_channel_id
         self.confim_emote_id = confirmation_emote_id
-        self.logger = logging.getLogger('discord.bot')
+        self.logger = logging.getLogger("discord.bot")
 
         # TODO: Persist RSS feeds to database/file
         self.rss_file = rss_file
         self.rss_feeds = []
-        self.rss_channel_id = log_channel_id # Default the RSS channel for now
+        self.rss_channel_id = log_channel_id  # Default the RSS channel for now
         self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
         self.read_rss_file()
 
@@ -55,13 +57,13 @@ class AdminCog(commands.Cog):
     @property
     def log_channel(self):
         c = self.bot.get_channel(self.log_channel_id)
-        assert isinstance(c, TextChannel) # Channel must be a text channel
+        assert isinstance(c, TextChannel)  # Channel must be a text channel
         return c
 
     @property
     def rss_channel(self):
         c = self.bot.get_channel(self.rss_channel_id)
-        assert isinstance(c, TextChannel) # Channel must be a text channel
+        assert isinstance(c, TextChannel)  # Channel must be a text channel
         return c
 
     @property
@@ -80,33 +82,34 @@ class AdminCog(commands.Cog):
         with open(self.rss_file, "w") as f:
             f.write("\n".join(self.rss_feeds))
 
-
-    def get_rss_updates(self, time_flags: TimeFlags | None = None) -> Tuple[List[Embed], List[str]]:
+    def get_rss_updates(
+        self, time_flags: TimeFlags | None = None
+    ) -> Tuple[List[Embed], List[str]]:
         posts = []
         invalid_urls = []
 
         # Some time ago...
         if time_flags:
             self.rss_last_updated -= dt.timedelta(
-                days=time_flags.days,
-                hours=time_flags.hours,
-                minutes=time_flags.minutes
+                days=time_flags.days, hours=time_flags.hours, minutes=time_flags.minutes
             )
 
         for url in self.rss_feeds:
             source = feedparser.parse(url)
-            if (source.bozo):
+            if source.bozo:
                 invalid_urls.append(url)
                 continue
 
             # NOTE: feedparser library is horribly typed
             for entry in source.entries:
-                published_dt = dt.datetime(*entry['published_parsed'][:6], tzinfo=dt.timezone.utc) # type: ignore
+                published_dt = dt.datetime(
+                    *entry["published_parsed"][:6], tzinfo=dt.timezone.utc
+                )  # type: ignore
                 if published_dt >= self.rss_last_updated:
                     post = rss_embed(entry, published_dt)
                     posts.insert(0, post)
                 else:
-                    break # We can ignore the rest of the posts
+                    break  # We can ignore the rest of the posts
 
         self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
         return posts, invalid_urls
@@ -116,7 +119,9 @@ class AdminCog(commands.Cog):
         chain = create_aniketh_ai(ConversationBufferWindowMemory(return_messages=True))
         topic = self.topic_queue.pick_topic()
         try:
-            message = chain.predict(user_message=f"Write a short (5-6 word) sentence on {topic}")
+            message = chain.predict(
+                user_message=f"Write a short (5-6 word) sentence on {topic}"
+            )
         except RateLimitError:
             message = "I require sustenance 😐"
         game = Game(message)
@@ -127,12 +132,18 @@ class AdminCog(commands.Cog):
         try:
             posts, errs = self.get_rss_updates()
         except AttributeError as err:
-            await self.log_channel.send(embed=cmd_error(f"There was an error grabbing some post information:\n\n{err}"))
+            await self.log_channel.send(
+                embed=cmd_error(
+                    f"There was an error grabbing some post information:\n\n{err}"
+                )
+            )
             return
 
         if errs:
             f_errs = ", ".join(errs)
-            await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
+            await self.log_channel.send(
+                embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}")
+            )
 
         start = 0
         while start < len(posts):
@@ -153,12 +164,18 @@ class AdminCog(commands.Cog):
         try:
             posts, errs = self.get_rss_updates(time_flags)
         except AttributeError as err:
-            await self.log_channel.send(embed=cmd_error(f"There was an error grabbing some post information:\n\n{err}"))
+            await self.log_channel.send(
+                embed=cmd_error(
+                    f"There was an error grabbing some post information:\n\n{err}"
+                )
+            )
             return
 
         if errs:
             f_errs = ", ".join(errs)
-            await self.log_channel.send(embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}"))
+            await self.log_channel.send(
+                embed=cmd_error(f"The following are invalid URLS:\n\n{f_errs}")
+            )
 
         start = 0
         while start < len(posts):
@@ -178,7 +195,7 @@ class AdminCog(commands.Cog):
         await ctx.send(embed=info_msg(f"Added URL: `{url}`"))
 
     @admin.command(name="syncrss")
-    async def persist_rss_feed (self, ctx: commands.Context):
+    async def persist_rss_feed(self, ctx: commands.Context):
         self.write_rss_file()
         await ctx.send(embed=info_msg("Synced RSS feeds to disk."))
 
@@ -188,13 +205,13 @@ class AdminCog(commands.Cog):
 
     @admin.command(name="stopl")
     async def stop_loop(self, ctx: commands.Context, task_name: LowerStr):
-        if task_name not in ('rss', 'status'):
+        if task_name not in ("rss", "status"):
             await ctx.send(embed=cmd_error(f"{task_name} is not a valid task."))
             return
 
-        if task_name == 'status' and self.set_status.is_running():
+        if task_name == "status" and self.set_status.is_running():
             self.set_status.cancel()
-        elif task_name.lower() == 'rss' and self.update_rss_channel.is_running():
+        elif task_name.lower() == "rss" and self.update_rss_channel.is_running():
             self.update_rss_channel.cancel()
         else:
             await ctx.send(embed=cmd_error(f"{task_name} task is already stopped."))
@@ -204,13 +221,13 @@ class AdminCog(commands.Cog):
 
     @admin.command(name="startl")
     async def start_loop(self, ctx: commands.Context, task_name: LowerStr):
-        if task_name not in ('rss', 'status'):
+        if task_name not in ("rss", "status"):
             await ctx.send(embed=cmd_error(f"{task_name} is not a valid task."))
             return
 
-        if task_name == 'status' and not self.set_status.is_running():
+        if task_name == "status" and not self.set_status.is_running():
             self.set_status.start()
-        elif task_name == 'rss' and not self.update_rss_channel.is_running():
+        elif task_name == "rss" and not self.update_rss_channel.is_running():
             self.update_rss_channel.start()
         else:
             await ctx.send(embed=cmd_error(f"{task_name} task is already running."))
@@ -222,19 +239,21 @@ class AdminCog(commands.Cog):
     async def status_loop(self, ctx: commands.Context):
         status_embed = loop_status(
             "Status Updates",
-            self.set_status.is_running(), 
-            self.set_status.next_iteration
+            self.set_status.is_running(),
+            self.set_status.next_iteration,
         )
         rss_embed = loop_status(
             "RSS Update Feed",
-            self.update_rss_channel.is_running(), 
-            self.update_rss_channel.next_iteration
+            self.update_rss_channel.is_running(),
+            self.update_rss_channel.next_iteration,
         )
         await ctx.send(embeds=[status_embed, rss_embed])
 
     @admin.command(name="kill")
     async def kill_bot(self, ctx: commands.Context):
-        await ctx.send(f"NOOOOO PLEASE {self.bot.get_emoji(1145147159260450907)}") # :cri: emoji
+        await ctx.send(
+            f"NOOOOO PLEASE {self.bot.get_emoji(1145147159260450907)}"
+        )  # :cri: emoji
 
         def check(reaction, user):
             return self.bot.is_owner(user) and reaction.emoji == self.confim_emote
@@ -265,25 +284,24 @@ class AdminCog(commands.Cog):
 
     @admin.command()
     async def starboard(self, ctx: commands.Context, channel: TextChannel):
-        user_cog = self.bot.get_cog('UserCog')
+        user_cog = self.bot.get_cog("UserCog")
         assert isinstance(user_cog, UserCog)
         user_cog.starboard_id = channel.id
         await ctx.send(embed=info_msg(f"Set starboard to {channel}"))
 
     @admin.command()
     async def minstars(self, ctx: commands.Context, minstars: int):
-        user_cog = self.bot.get_cog('UserCog')
+        user_cog = self.bot.get_cog("UserCog")
         assert isinstance(user_cog, UserCog)
         user_cog.star_threshold = minstars
         await ctx.send(embed=info_msg(f"Set minimum stars to {minstars}"))
 
     # check if commands are locked
-    async def bot_check(self, ctx): #type: ignore
+    async def bot_check(self, ctx):  # type: ignore
         if await self.bot.is_owner(ctx.author):
             return True
         return not self.locked
 
     # checks if the author is the owner
-    async def cog_check(self, ctx): # type: ignore
+    async def cog_check(self, ctx):  # type: ignore
         return await self.bot.is_owner(ctx.author)
-

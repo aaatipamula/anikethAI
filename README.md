@@ -11,5 +11,5 @@ COMMAND_PREFIX="!"
 DUMP_CHANNEL="channel_id"
 ABOUT_ME="Some about me..."
 TIMEZONE="pytz_timezone"
-START_HOUR="[0, 24]"
+START_HOUR="[0...24]"
 ```
