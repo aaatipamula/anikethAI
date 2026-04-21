@@ -13,15 +13,18 @@ _expr_executor = ThreadPoolExecutor(max_workers=2)
 _EVAL_TIMEOUT = 5  # seconds
 
 # Matches eval-at notation: \big|_{x=1} or \bigg|_{x=2} or just |_{x=1}
-_EVAL_AT_RE = re.compile(r'^(.*?)\\big[gl]?\|_\{([^}]+)\}\s*$|^(.*?)\|_\{([^}]+)\}\s*$', re.DOTALL)
+_EVAL_AT_RE = re.compile(
+    r"^(.*?)\\big[gl]?\|_\{([^}]+)\}\s*$|^(.*?)\|_\{([^}]+)\}\s*$", re.DOTALL
+)
 
 
 def _parse_subs(subs_str: str):
     from sympy import sympify, symbols
+
     result = {}
-    for part in subs_str.split(','):
-        if '=' in part:
-            var, val = part.split('=', 1)
+    for part in subs_str.split(","):
+        if "=" in part:
+            var, val = part.split("=", 1)
             result[symbols(var.strip())] = sympify(val.strip())
     return result
 
@@ -34,8 +37,8 @@ def _evaluate_expr(msg: str) -> Optional[int]:
     subs = {}
     m = _EVAL_AT_RE.match(msg)
     if m:
-        expr_str = (m.group(1) or m.group(3) or '').strip()
-        subs_str = (m.group(2) or m.group(4) or '').strip()
+        expr_str = (m.group(1) or m.group(3) or "").strip()
+        subs_str = (m.group(2) or m.group(4) or "").strip()
         try:
             subs = _parse_subs(subs_str)
         except Exception:
@@ -99,4 +102,3 @@ def normalize_tz(timezone: str, start_hour: int):
         time(hour=(start_hour + 12) % 24, tzinfo=local_tzinfo),
         time(hour=(start_hour + 18) % 24, tzinfo=local_tzinfo),
     )
-

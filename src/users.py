@@ -19,9 +19,9 @@ from database import (
 )
 from ext import (
     info_msg,
-    cmd_error, 
-    star_message, 
-    topic_msg, 
+    cmd_error,
+    star_message,
+    topic_msg,
     help_command,
     counting_err,
 )
@@ -131,7 +131,10 @@ class UserCog(commands.Cog):
 
             if number is None:
                 pass
-            elif number == self.counting_current_number and message.author != self.counting_last_author:
+            elif (
+                number == self.counting_current_number
+                and message.author != self.counting_last_author
+            ):
                 await message.add_reaction("✅")
                 self.counting_current_number += 1
                 self.counting_last_author = message.author
@@ -142,8 +145,8 @@ class UserCog(commands.Cog):
                 await message.add_reaction("❌")
                 err_embed = counting_err(
                     "No double posting!",
-                    self.counting_current_number, 
-                    self.counting_high_score - 1
+                    self.counting_current_number,
+                    self.counting_high_score - 1,
                 )
                 await message.channel.send(embed=err_embed)
                 self.counting_current_number = 1
@@ -153,8 +156,8 @@ class UserCog(commands.Cog):
                 await message.add_reaction("❌")
                 err_embed = counting_err(
                     "Invalid count!",
-                    self.counting_current_number, 
-                    self.counting_high_score - 1
+                    self.counting_current_number,
+                    self.counting_high_score - 1,
                 )
                 await message.channel.send(embed=err_embed)
                 self.counting_current_number = 1

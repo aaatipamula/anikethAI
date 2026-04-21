@@ -99,10 +99,12 @@ commands: dict = json.load(open(join(dirname(__file__), "data", "commands.json")
 embed_color = 0x5B7DA6
 error_color = 0x991A2D
 
+
 def html_to_markdown(html: str) -> str:
     parser = _HtmlToMarkdown()
     parser.feed(html)
     return parser.get_markdown()
+
 
 # embed for bot errors
 def bot_error(desc: str):

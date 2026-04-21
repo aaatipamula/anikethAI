@@ -105,7 +105,8 @@ class AdminCog(commands.Cog):
             # NOTE: feedparser library is horribly typed
             for entry in source.entries:
                 published_dt = dt.datetime(
-                    *entry["published_parsed"][:6], tzinfo=dt.timezone.utc  # type: ignore
+                    *entry["published_parsed"][:6],
+                    tzinfo=dt.timezone.utc,  # type: ignore
                 )
                 if published_dt >= self.rss_last_updated:
                     post = rss_embed(entry, published_dt)

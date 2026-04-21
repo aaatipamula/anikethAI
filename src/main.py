@@ -67,10 +67,13 @@ client = commands.Bot(
 
 # create our cogs
 admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, RSS_FILE)
-user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL or DUMP_CHANNEL)
+user_cog = UserCog(
+    client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL or DUMP_CHANNEL
+)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)
+
 
 @client.event
 async def on_ready():
