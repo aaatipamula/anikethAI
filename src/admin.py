@@ -97,14 +97,16 @@ class AdminCog(commands.Cog):
         for url in self.rss_feeds:
             source = feedparser.parse(url)
             if source.bozo:
+                exc = source.bozo_exception
+                self.logger.error(exc.getMessage())  # type: ignore
                 invalid_urls.append(url)
                 continue
 
             # NOTE: feedparser library is horribly typed
             for entry in source.entries:
                 published_dt = dt.datetime(
-                    *entry["published_parsed"][:6], tzinfo=dt.timezone.utc
-                )  # type: ignore
+                    *entry["published_parsed"][:6], tzinfo=dt.timezone.utc  # type: ignore
+                )
                 if published_dt >= self.rss_last_updated:
                     post = rss_embed(entry, published_dt)
                     posts.insert(0, post)

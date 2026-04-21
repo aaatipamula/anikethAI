@@ -2,17 +2,107 @@ import re
 import json
 import random
 import datetime
+from html.parser import HTMLParser
 from pytz import timezone
 from typing import List, Tuple
 from os.path import join, dirname
 
 import discord
 
+
+class _HtmlToMarkdown(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: list[str] = []
+        self._list_type_stack: list[str] = []
+        self._list_counters: list[int] = []
+        self._pending_href: str = ""
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        attr = dict(attrs)
+        if tag in ("b", "strong"):
+            self._parts.append("**")
+        elif tag in ("i", "em"):
+            self._parts.append("*")
+        elif tag in ("s", "strike", "del"):
+            self._parts.append("~~")
+        elif tag == "u":
+            self._parts.append("__")
+        elif tag == "code":
+            self._parts.append("`")
+        elif tag == "pre":
+            self._parts.append("```\n")
+        elif tag in ("h1", "h2", "h3"):
+            self._parts.append("\n" + "#" * int(tag[1]) + " ")
+        elif tag in ("h4", "h5", "h6"):
+            self._parts.append("\n### ")
+        elif tag == "a":
+            self._pending_href = attr.get("href") or ""
+            self._parts.append("[")
+        elif tag == "br":
+            self._parts.append("\n")
+        elif tag == "p":
+            self._parts.append("\n")
+        elif tag == "ul":
+            self._list_type_stack.append("ul")
+            self._list_counters.append(0)
+        elif tag == "ol":
+            self._list_type_stack.append("ol")
+            self._list_counters.append(0)
+        elif tag == "li":
+            if self._list_type_stack and self._list_type_stack[-1] == "ol":
+                self._list_counters[-1] += 1
+                self._parts.append(f"\n{self._list_counters[-1]}. ")
+            else:
+                self._parts.append("\n- ")
+        elif tag == "blockquote":
+            self._parts.append("\n> ")
+        elif tag == "hr":
+            self._parts.append("\n---\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("b", "strong"):
+            self._parts.append("**")
+        elif tag in ("i", "em"):
+            self._parts.append("*")
+        elif tag in ("s", "strike", "del"):
+            self._parts.append("~~")
+        elif tag == "u":
+            self._parts.append("__")
+        elif tag == "code":
+            self._parts.append("`")
+        elif tag == "pre":
+            self._parts.append("\n```")
+        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
+            self._parts.append("\n")
+        elif tag == "a":
+            self._parts.append(f"]({self._pending_href})")
+            self._pending_href = ""
+        elif tag == "p":
+            self._parts.append("\n")
+        elif tag in ("ul", "ol"):
+            if self._list_type_stack:
+                self._list_type_stack.pop()
+                self._list_counters.pop()
+
+    def handle_data(self, data: str) -> None:
+        self._parts.append(data)
+
+    def get_markdown(self) -> str:
+        result = "".join(self._parts)
+        result = re.sub(r"\n{3,}", "\n\n", result)
+        return result.strip()
+
+
 commands: dict = json.load(open(join(dirname(__file__), "data", "commands.json")))
 
 embed_color = 0x5B7DA6
 error_color = 0x991A2D
 
+def html_to_markdown(html: str) -> str:
+    parser = _HtmlToMarkdown()
+    parser.feed(html)
+    return parser.get_markdown()
 
 # embed for bot errors
 def bot_error(desc: str):
@@ -52,28 +142,7 @@ def loop_status(
 
 
 def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Embed:
-    paragraph_re = re.compile(r"<p>(.*?)</p>", re.IGNORECASE)
-    link_re = re.compile(
-        r'<a\s+[^>]*href=["\'](.*?)["\'][^>]*>(.*?)</a>', re.IGNORECASE
-    )
-    break_re = re.compile(r"<br\s*/?>", re.IGNORECASE)
-
-    # Functions to replace match with Markdown format
-    def replace_link(match: re.Match[str]) -> str:
-        url, text = match.groups()
-        if text == url:
-            return url
-        return f"[{text}]({url})"
-
-    def replace_paragraph(match: re.Match[str]) -> str:
-        (text,) = match.groups()
-        return text
-
-    # Perform substitution
-    desc = post["description"]
-    desc = break_re.sub("\n\n", desc)
-    desc = link_re.sub(replace_link, desc)
-    desc = paragraph_re.sub(replace_paragraph, desc)
+    desc = html_to_markdown(post.get("description", ""))
 
     # Create the discord embed
     a = discord.Embed(
