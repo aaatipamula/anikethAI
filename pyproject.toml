@@ -1,7 +1,7 @@
 [project]
 name = "anikethai"
 version = "0.1.0"
-description = "Add your description here"
+description = "A weekend discord bot project"
 readme = "README.md"
 requires-python = ">=3.9, < 3.13"
 dependencies = [
@@ -37,6 +37,8 @@ dependencies = [
     "sgmllib3k==1.0.0",
     "sqlalchemy==2.0.22",
     "tenacity==8.5.0",
+    "antlr4-python3-runtime==4.11.1",
+    "sympy>=1.13",
     "tqdm==4.67.1",
     "typing-extensions==4.13.0",
     "typing-inspect==0.9.0",

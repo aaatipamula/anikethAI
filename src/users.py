@@ -9,7 +9,7 @@ from openai.error import RateLimitError
 from consts import NO_TOKENS, RANDOM_REPLYS
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
-from util import random_messages
+from util import random_messages, convert_to_int
 from database import (
     get_user_mem,
     dump_user_mem,
@@ -17,13 +17,20 @@ from database import (
     add_starred_message,
     remove_starred_message,
 )
-from ext import info_msg, cmd_error, star_message, topic_msg, help_command
+from ext import (
+    info_msg,
+    cmd_error, 
+    star_message, 
+    topic_msg, 
+    help_command,
+    counting_err,
+)
 
 
 # Convert Flag arguments for the remove command
 class RemoveFlags(commands.FlagConverter):
-    span: Tuple[int, int] = None  # Known type checking error
-    topic: Optional[str]
+    span: Optional[Tuple[int, int]] = None
+    topic: Optional[str] = None
 
 
 class UserCog(commands.Cog):
@@ -32,17 +39,30 @@ class UserCog(commands.Cog):
         bot: commands.Bot,
         topic_queue: TopicQueue,
         about_me: str,
-        starboard_id: Optional[int],
+        *,
+        starboard_channel_id: Optional[int] = None,
+        counting_channel_id: Optional[int] = None,
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
         self.about_me = about_me
         self.star_threshold = 3
-        self.starboard_id = starboard_id
+        self.starboard_id = starboard_channel_id
+        self.counting_channel_id = counting_channel_id
+
+        self.counting_current_number = 1
+        self.counting_last_author: Optional[Union[User, Member]] = None
+        self.counting_high_score = 1
 
     @property
     def starboard(self):
         c = self.bot.get_channel(self.starboard_id or 0)
+        assert isinstance(c, TextChannel) or c is None
+        return c
+
+    @property
+    def counting(self):
+        c = self.bot.get_channel(self.counting_channel_id or 0)
         assert isinstance(c, TextChannel) or c is None
         return c
 
@@ -103,6 +123,42 @@ class UserCog(commands.Cog):
         # ignore if self
         if message.author == self.bot.user:
             return
+
+        # Counting channel
+        if message.channel == self.counting:
+            number = convert_to_int(message.content)
+            print("COUNTING NUMBER: ", number)
+
+            if number is None:
+                pass
+            elif number == self.counting_current_number and message.author != self.counting_last_author:
+                await message.add_reaction("✅")
+                self.counting_current_number += 1
+                self.counting_last_author = message.author
+                if self.counting_current_number > self.counting_high_score:
+                    self.counting_high_score = self.counting_current_number
+            elif number == self.counting_current_number:
+                # Right number but same author
+                await message.add_reaction("❌")
+                err_embed = counting_err(
+                    "No double posting!",
+                    self.counting_current_number, 
+                    self.counting_high_score - 1
+                )
+                await message.channel.send(embed=err_embed)
+                self.counting_current_number = 1
+                self.counting_last_author = None
+            else:
+                # Wrong number
+                await message.add_reaction("❌")
+                err_embed = counting_err(
+                    "Invalid count!",
+                    self.counting_current_number, 
+                    self.counting_high_score - 1
+                )
+                await message.channel.send(embed=err_embed)
+                self.counting_current_number = 1
+                self.counting_last_author = None
 
         if self.bot.user.mentioned_in(message):  # known type checking error
             async with message.channel.typing():

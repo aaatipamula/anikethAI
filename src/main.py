@@ -31,6 +31,7 @@ DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", "0"))
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
 TIMEZONE = os.environ.get("TIMEZONE", "")
 START_HOUR = int(os.environ.get("START_HOUR", "10"))
+COUNTING_CHANNEL = int(os.environ.get("COUNTING_CHANNEL", "0"))
 RSS_FILE = join(dirname(__file__), "data", "rss.txt")
 
 # Declaring gateway intents, discord.py >= 2.0 feature
@@ -66,11 +67,10 @@ client = commands.Bot(
 
 # create our cogs
 admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, RSS_FILE)
-user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, DUMP_CHANNEL)
+user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL or DUMP_CHANNEL)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)
-
 
 @client.event
 async def on_ready():

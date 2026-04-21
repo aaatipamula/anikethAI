@@ -126,6 +126,13 @@ def topic_msg(topics: List[str]) -> discord.Embed:
     return a
 
 
+def counting_err(reason: str, correct_count: int, high_score: int) -> discord.Embed:
+    a = discord.Embed(color=error_color, title=reason)
+    a.add_field(name="Correct Count", value=correct_count, inline=False)
+    a.add_field(name="High Score", value=high_score, inline=False)
+    return a
+
+
 def loop_status(
     name: str, running: bool, next_run: datetime.datetime | None
 ) -> discord.Embed:
