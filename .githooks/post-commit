@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ruff format
+git add .
+git commit -m "chore (post-commit): 🧹 ruff format"
