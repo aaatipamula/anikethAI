@@ -1,12 +1,14 @@
 # syntax = docker/dockerfile:experimental
-FROM python:3
+FROM python:3.12-slim
 
-WORKDIR /home/bot/ 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY requirements.txt .
+WORKDIR /home/bot/
 
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+COPY pyproject.toml uv.lock ./
+
+# RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-install-project
 
 COPY . .
 
-CMD [ "python3", "./src/main.py" ]
+CMD [ "uv", "run", "./src/main.py" ]
