@@ -127,7 +127,6 @@ class UserCog(commands.Cog):
         # Counting channel
         if message.channel == self.counting:
             number = convert_to_int(message.content)
-            print("COUNTING NUMBER: ", number)
 
             if number is None:
                 pass

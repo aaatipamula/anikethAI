@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import datetime as dt
 from asyncio import TimeoutError  # , sleep as async_sleep
@@ -82,7 +83,7 @@ class AdminCog(commands.Cog):
         with open(self.rss_file, "w") as f:
             f.write("\n".join(self.rss_feeds))
 
-    def get_rss_updates(
+    async def get_rss_updates(
         self, time_flags: TimeFlags | None = None
     ) -> Tuple[List[Embed], List[str]]:
         posts = []
@@ -95,7 +96,7 @@ class AdminCog(commands.Cog):
             )
 
         for url in self.rss_feeds:
-            source = feedparser.parse(url)
+            source = await asyncio.to_thread(feedparser.parse, url)
             if source.bozo:
                 exc = source.bozo_exception
                 self.logger.error(exc.getMessage())  # type: ignore
@@ -105,8 +106,8 @@ class AdminCog(commands.Cog):
             # NOTE: feedparser library is horribly typed
             for entry in source.entries:
                 published_dt = dt.datetime(
-                    *entry["published_parsed"][:6],
-                    tzinfo=dt.timezone.utc,  # type: ignore
+                    *entry["published_parsed"][:6],  # type: ignore
+                    tzinfo=dt.timezone.utc,
                 )
                 if published_dt >= self.rss_last_updated:
                     post = rss_embed(entry, published_dt)
@@ -133,7 +134,7 @@ class AdminCog(commands.Cog):
     @tasks.loop()
     async def update_rss_channel(self):
         try:
-            posts, errs = self.get_rss_updates()
+            posts, errs = await self.get_rss_updates()
         except AttributeError as err:
             await self.log_channel.send(
                 embed=cmd_error(
@@ -165,7 +166,7 @@ class AdminCog(commands.Cog):
     @admin.command(name="getrss")
     async def get_rss_from(self, _: commands.Context, time_flags: TimeFlags):
         try:
-            posts, errs = self.get_rss_updates(time_flags)
+            posts, errs = await self.get_rss_updates(time_flags)
         except AttributeError as err:
             await self.log_channel.send(
                 embed=cmd_error(
