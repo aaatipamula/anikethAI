@@ -12,6 +12,10 @@ LowerStr = Annotated[str, lambda x: x.lower()]
 _expr_executor = ThreadPoolExecutor(max_workers=2)
 _EVAL_TIMEOUT = 5  # seconds
 
+########################
+#  Counting Evaluator  #
+########################
+
 # Matches eval-at notation: \big|_{x=1} or \bigg|_{x=2} or just |_{x=1}
 _EVAL_AT_RE = re.compile(
     r"^(.*?)\\big[gl]?\|_\{([^}]+)\}\s*$|^(.*?)\|_\{([^}]+)\}\s*$", re.DOTALL
@@ -78,6 +82,11 @@ def convert_to_int(message: str) -> Optional[int]:
     except (FuturesTimeout, Exception):
         future.cancel()
         return None
+
+
+##################
+#  Transformers  #
+##################
 
 
 def random_messages(messages: List[MessageValues], content: str):

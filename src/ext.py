@@ -154,7 +154,9 @@ def loop_status(
     return a
 
 
-def rss_embed(post: dict[str, str], timestamp: datetime.datetime, post_id: str) -> discord.Embed:
+def rss_embed(
+    post: dict[str, str], timestamp: datetime.datetime, post_id: str
+) -> discord.Embed:
     desc = html_to_markdown(post.get("description", ""))
 
     # Create the discord embed

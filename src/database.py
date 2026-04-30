@@ -21,6 +21,7 @@ class User(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     memory: Mapped[str] = mapped_column(Text(), default="{}")
+    moner: Mapped[int] = mapped_column(Integer(), default=500)
 
 
 class StarredMessage(BaseModel):
@@ -105,4 +106,42 @@ def dump_user_mem(_id: int, memory: ConversationBufferWindowMemory) -> None:
     stmt = update(User).where(User.id == _id).values(memory=memory_str)
     with Session(engine) as session:
         session.execute(stmt)
+        session.commit()
+
+
+##############
+#  Gambling  #
+##############
+
+
+def get_user_moner(user_id: int) -> int:
+    stmt = select(User.moner).where(User.id == user_id)
+    with Session(engine) as session:
+        result = session.execute(stmt).first()
+        if result is None:
+            create_user(session, user_id)
+    return result[0] if result else 500
+
+
+def update_user_moner(user_id: int, amount: int) -> None:
+    stmt = update(User).where(User.id == user_id).values(moner=amount)
+    with Session(engine) as session:
+        session.execute(stmt)
+        session.commit()
+
+
+###################
+#  Post Tracking  #
+###################
+
+
+def is_post_sent(post_id: str) -> bool:
+    stmt = select(SentPost.id).where(SentPost.id == post_id)
+    with Session(engine) as session:
+        return session.execute(stmt).first() is not None
+
+
+def add_sent_post(post_id: str, message_id: int, sent_at: datetime.datetime) -> None:
+    with Session(engine) as session:
+        session.add(SentPost(id=post_id, message_id=message_id, sent_at=sent_at))
         session.commit()

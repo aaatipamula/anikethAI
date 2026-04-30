@@ -32,6 +32,12 @@ docker run --env-file src/data/.env anikethai
 
 Package management uses `uv` with `pyproject.toml`. The lockfile is `requirements.txt` (used by Docker).
 
+## Code Conventions
+
+This project uses `ruff` for formatting and type checking.
+
+Run `ruff format` after making any code changes to format the code.
+
 ## Architecture
 
 All source lives in `src/`. The entry point is `main.py`, which:

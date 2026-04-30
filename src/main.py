@@ -19,6 +19,7 @@ from util import normalize_tz
 
 load_dotenv()
 
+
 # ENV variable loader
 def _get_env(key: str) -> str:
     val = os.environ.get(key)

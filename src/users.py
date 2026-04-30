@@ -1,4 +1,5 @@
-from typing import Tuple, Optional, Union
+from gamble import parse_raw_guess
+from typing import Tuple, Optional, Union, Literal
 from random import choice as randChoice
 from asyncio import sleep as asyncSleep
 
@@ -10,12 +11,20 @@ from consts import NO_TOKENS, RANDOM_REPLYS
 from topicQueue import TopicQueue
 from chain import create_aniketh_ai
 from util import random_messages, convert_to_int
+from gamble import (
+    deal_cards,
+    get_multiplier,
+    gambling_embed,
+    gambling_error,
+)
 from database import (
     get_user_mem,
     dump_user_mem,
     get_board_message_id,
     add_starred_message,
+    get_user_moner,
     remove_starred_message,
+    update_user_moner,
 )
 from ext import (
     info_msg,
@@ -117,6 +126,59 @@ class UserCog(commands.Cog):
         await ctx.send(embed=userHelp)
         if adminHelp is not None:
             await ctx.send(embed=adminHelp, ephemeral=True)
+
+    @commands.command()
+    async def gamble(
+        self,
+        ctx,
+        amount: Optional[int] = None,
+        *args,
+    ):
+        author_id = ctx.author.id
+        gambled_amount = amount or 50
+
+        rank, suit = parse_raw_guess(list(args))
+
+        print("Rank: ", rank, "Suit: ", suit)
+
+        # Both rank and suit cannot be empty
+        if rank is None and suit is None:
+            err_msg = gambling_error("You must specify a rank, suit, or card")
+            await ctx.channel.send(embed=err_msg)
+            return
+
+        total_moners = get_user_moner(author_id)
+
+        # Deduct moners if possible
+        if gambled_amount > total_moners:
+            err_msg = gambling_error("You can't gamble more than you have!")
+            await ctx.channel.send(embed=err_msg)
+            return
+
+        total_moners = total_moners - gambled_amount
+
+        # Gamble
+        cards = deal_cards(4)
+        multiplier = get_multiplier(cards, rank, suit)
+
+        # Calculations
+        is_winner = multiplier > 0
+        profit = multiplier * gambled_amount
+        total_moners += profit
+        update_user_moner(author_id, total_moners)
+
+        embed = gambling_embed(
+            cards,
+            rank,
+            suit,
+            is_winner,
+            profit if is_winner else gambled_amount,
+            total_moners,
+        )
+
+        await ctx.channel.send(embed=embed)
+
+        # TODO: Add moner reloads, moner amount checks, and rules
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
