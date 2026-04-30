@@ -1,3 +1,5 @@
+from typing import Optional
+from gamble import Rank, Suit, Card
 import re
 import json
 import random
@@ -8,6 +10,8 @@ from typing import List, Tuple
 from os.path import join, dirname
 
 import discord
+
+from gamble import Cards
 
 
 class _HtmlToMarkdown(HTMLParser):
@@ -150,7 +154,7 @@ def loop_status(
     return a
 
 
-def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Embed:
+def rss_embed(post: dict[str, str], timestamp: datetime.datetime, post_id: str) -> discord.Embed:
     desc = html_to_markdown(post.get("description", ""))
 
     # Create the discord embed
@@ -161,6 +165,8 @@ def rss_embed(post: dict[str, str], timestamp: datetime.datetime) -> discord.Emb
         timestamp=timestamp,
         url=post.get("link"),
     )
+
+    a.set_footer(text=post_id)
 
     # Get Object items
     for item in post.get("enclosures", []):

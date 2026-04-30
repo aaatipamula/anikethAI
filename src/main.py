@@ -1,37 +1,40 @@
+import logging
 import os
 import sys
-from os.path import join, dirname
-
-from users import UserCog
-from admin import AdminCog
-from topicQueue import QueueError, TopicQueue
-from database import BaseModel, engine
-from util import normalize_tz
-from ext import (
-    cmd_error,
-    bot_error,
-)
+from os.path import dirname, join
 
 import discord
-import logging
-from dotenv import load_dotenv
 from discord.ext import commands
+from dotenv import load_dotenv
 
-# load the .env file
-dotenv_path = join(dirname(__file__), "data", ".env")
-try:
-    load_dotenv(dotenv_path=dotenv_path)
-except FileNotFoundError:
-    print(".env not found")
+from admin import AdminCog
+from database import BaseModel, engine
+from ext import (
+    bot_error,
+    cmd_error,
+)
+from topicQueue import QueueError, TopicQueue
+from users import UserCog
+from util import normalize_tz
 
-# grab our env vars
-TOKEN = os.environ.get("TOKEN", "")
-ABOUT_ME = os.environ.get("ABOUT_ME", "")
-DUMP_CHANNEL = int(os.environ.get("DUMP_CHANNEL", "0"))
-COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX")
-TIMEZONE = os.environ.get("TIMEZONE", "")
+load_dotenv()
+
+# ENV variable loader
+def _get_env(key: str) -> str:
+    val = os.environ.get(key)
+    if not val:
+        raise ValueError(f"Required ENV variable {key} missing!")
+    return val
+
+
+TOKEN = _get_env("TOKEN")
+ABOUT_ME = _get_env("ABOUT_ME")
+COMMAND_PREFIX = _get_env("COMMAND_PREFIX")
+TIMEZONE = _get_env("TIMEZONE")
 START_HOUR = int(os.environ.get("START_HOUR", "10"))
-COUNTING_CHANNEL = int(os.environ.get("COUNTING_CHANNEL", "0"))
+DUMP_CHANNEL = int(_get_env("DUMP_CHANNEL"))
+COUNTING_CHANNEL = int(_get_env("COUNTING_CHANNEL"))
+RSS_CHANNEL = int(_get_env("RSS_CHANNEL"))
 RSS_FILE = join(dirname(__file__), "data", "rss.txt")
 
 # Declaring gateway intents, discord.py >= 2.0 feature
@@ -67,9 +70,7 @@ client = commands.Bot(
 
 # create our cogs
 admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, RSS_FILE)
-user_cog = UserCog(
-    client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL or DUMP_CHANNEL
-)
+user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)

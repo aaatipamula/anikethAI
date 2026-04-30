@@ -1,8 +1,9 @@
 import json
+import datetime
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
 from langchain.schema import messages_from_dict, messages_to_dict
-from sqlalchemy import Text, Integer, select, update, delete, create_engine
+from sqlalchemy import Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 
 db_path = join(dirname(__file__), "data", "bot.db")
@@ -29,6 +30,19 @@ class StarredMessage(BaseModel):
     board_message: Mapped[int] = mapped_column(Integer())
 
 
+class SentPost(BaseModel):
+    __tablename__ = "SentPosts"
+
+    id: Mapped[str] = mapped_column(Text(), primary_key=True)
+    message_id: Mapped[int] = mapped_column(Integer())
+    sent_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
+
+
+###############
+#  Starboard  #
+###############
+
+
 def get_board_message_id(_id: int) -> int:
     stmt = select(StarredMessage.board_message).where(StarredMessage.id == _id)
     with Session(engine) as session:
@@ -50,6 +64,22 @@ def remove_starred_message(_id: int):
         session.commit()
 
 
+###############
+#  User Util  #
+###############
+
+
+def create_user(session: Session, _id: int) -> None:
+    new_user = User(id=_id)
+    session.add(new_user)
+    session.commit()
+
+
+#############
+#  AI Chat  #
+#############
+
+
 def get_user_mem(_id: int) -> ConversationBufferWindowMemory:
     stmt = select(User.memory).where(User.id == _id)
     history = None
@@ -60,9 +90,8 @@ def get_user_mem(_id: int) -> ConversationBufferWindowMemory:
             messages = messages_from_dict(memory_dict)
             history = ChatMessageHistory(messages=messages)
         else:
-            new_user = User(id=_id)
-            session.add(new_user)
-            session.commit()
+            create_user(session, _id)
+
     history = history if history else ChatMessageHistory()
 
     return ConversationBufferWindowMemory(

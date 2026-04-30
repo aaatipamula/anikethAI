@@ -1,18 +1,19 @@
 import asyncio
-import logging
 import datetime as dt
+import logging
 from asyncio import TimeoutError  # , sleep as async_sleep
 from typing import List, Tuple
 
 import feedparser
-from discord import Game, TextChannel, Embed
+from discord import Embed, Game, TextChannel
 from discord.ext import commands, tasks
 from langchain.memory import ConversationBufferWindowMemory
 from openai.error import RateLimitError
 
-from topicQueue import TopicQueue
 from chain import create_aniketh_ai
+from database import add_sent_post, is_post_sent
 from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
+from topicQueue import TopicQueue
 from users import UserCog
 from util import LowerStr
 
@@ -46,7 +47,7 @@ class AdminCog(commands.Cog):
 
         # TODO: Persist RSS feeds to database/file
         self.rss_file = rss_file
-        self.rss_feeds = []
+        self.rss_feeds: List[str] = []
         self.rss_channel_id = log_channel_id  # Default the RSS channel for now
         self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
         self.read_rss_file()
@@ -85,7 +86,7 @@ class AdminCog(commands.Cog):
 
     async def get_rss_updates(
         self, time_flags: TimeFlags | None = None
-    ) -> Tuple[List[Embed], List[str]]:
+    ) -> Tuple[List[Tuple[str, Embed]], List[str]]:
         posts = []
         invalid_urls = []
 
@@ -110,8 +111,11 @@ class AdminCog(commands.Cog):
                     tzinfo=dt.timezone.utc,
                 )
                 if published_dt >= self.rss_last_updated:
-                    post = rss_embed(entry, published_dt)
-                    posts.insert(0, post)
+                    post_id = entry.get("id") or entry.get("link", url)
+                    if not is_post_sent(post_id):
+                        posts.insert(
+                            0, (post_id, rss_embed(entry, published_dt, post_id))
+                        )
                 else:
                     break  # We can ignore the rest of the posts
 
@@ -152,7 +156,11 @@ class AdminCog(commands.Cog):
         start = 0
         while start < len(posts):
             stop = start + 5 if start + 5 < len(posts) else len(posts)
-            await self.rss_channel.send(embeds=posts[start:stop])
+            batch = posts[start:stop]
+            msg = await self.rss_channel.send(embeds=[embed for _, embed in batch])
+            now = dt.datetime.now(tz=dt.timezone.utc)
+            for post_id, _ in batch:
+                add_sent_post(post_id, msg.id, now)
             start = stop
 
         self.logger.info(f"Sent {len(posts)} to #{self.rss_channel}")
@@ -184,7 +192,11 @@ class AdminCog(commands.Cog):
         start = 0
         while start < len(posts):
             stop = start + 5 if start + 5 < len(posts) else len(posts)
-            await self.rss_channel.send(embeds=posts[start:stop])
+            batch = posts[start:stop]
+            msg = await self.rss_channel.send(embeds=[embed for _, embed in batch])
+            now = dt.datetime.now(tz=dt.timezone.utc)
+            for post_id, _ in batch:
+                add_sent_post(post_id, msg.id, now)
             start = stop
 
     @admin.command(name="setrss")
