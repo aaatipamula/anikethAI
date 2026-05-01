@@ -1,4 +1,41 @@
 {
+  "gamble": {
+    "hidden": false,
+    "cmd_desc": "# Game Layout\n\nYou are dealt 4 cards from the deck. You can choose a suit, rank, or specific card that you think will appear in your dealt hand.\n# Multipliers\n\nIf you get the suit, a 2x multiplier is applied to your gambled amount\nIf you get the rank, a 4x multiplier is applied to your gambled amount\nIf you get the card, an 8x multiplier is applied to your gambled amount\n",
+    "params": [
+      {
+        "name": "amount",
+        "optional": true,
+        "type": "positional",
+        "data_type": "integer",
+        "description": "The amount of moner you would like to gamble",
+        "notes": "The amount will default to 50 moner if you don't specify. You cannot gamble more than you have!"
+      },
+      {
+        "name": "card-rank-suit",
+        "optional": false,
+        "type": "positional",
+        "data_type": "Card|Rank|Suit",
+        "description": "The rank, or suit, card to gamble on.",
+        "notes": "AnikethAI will try its very best to parse what you mean but try to be clear!"
+      }
+    ],
+    "usage": [
+      "gamble 123 king",
+      "gamble everything ace of spades",
+      "gamble club"
+    ]
+  },
+
+  "bank": {
+    "hidden": false,
+    "cmd_desc": "Check your bank account",
+    "params": null,
+    "usage": [
+      "bank"
+    ]
+  },
+
   "request": {
     "hidden": false,
     "cmd_desc": "Add topic(s) to the topic queue.",

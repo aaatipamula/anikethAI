@@ -1,22 +1,23 @@
-from gamble import parse_raw_guess
-from typing import Tuple, Optional, Union, Literal
-from random import choice as randChoice
+from datetime import timedelta
 from asyncio import sleep as asyncSleep
+from random import choice as randChoice
+from typing import Optional, Tuple, Union
 
-from discord.ext import commands
 from discord import Message, Reaction, TextChannel, User, Member
+from discord.ext import commands
 from openai.error import RateLimitError
 
-from consts import NO_TOKENS, RANDOM_REPLYS
-from topicQueue import TopicQueue
 from chain import create_aniketh_ai
-from util import random_messages, convert_to_int
-from gamble import (
+from consts import NO_TOKENS, RANDOM_REPLYS
+from gambling import (
     deal_cards,
-    get_multiplier,
     gambling_embed,
     gambling_error,
+    get_multiplier,
+    parse_raw_guess,
 )
+from topicQueue import TopicQueue
+from util import convert_to_int, random_messages
 from database import (
     get_user_mem,
     dump_user_mem,
@@ -25,6 +26,8 @@ from database import (
     get_user_moner,
     remove_starred_message,
     update_user_moner,
+    reload_user_account,
+    get_user_bank_info,
 )
 from ext import (
     info_msg,
@@ -33,6 +36,7 @@ from ext import (
     topic_msg,
     help_command,
     counting_err,
+    bank_embed,
 )
 
 
@@ -130,16 +134,18 @@ class UserCog(commands.Cog):
     @commands.command()
     async def gamble(
         self,
-        ctx,
+        ctx: commands.Context,
         amount: Optional[int] = None,
         *args,
     ):
+        # Ignore if a subcommand was invoked
+        if ctx.invoked_subcommand:
+            return
+
         author_id = ctx.author.id
-        gambled_amount = amount or 50
+        rank, suit, all_in = parse_raw_guess(list(args))
 
-        rank, suit = parse_raw_guess(list(args))
-
-        print("Rank: ", rank, "Suit: ", suit)
+        # print("Rank: ", rank, "Suit: ", suit)
 
         # Both rank and suit cannot be empty
         if rank is None and suit is None:
@@ -148,6 +154,7 @@ class UserCog(commands.Cog):
             return
 
         total_moners = get_user_moner(author_id)
+        gambled_amount = total_moners if all_in else amount or 50
 
         # Deduct moners if possible
         if gambled_amount > total_moners:
@@ -178,7 +185,26 @@ class UserCog(commands.Cog):
 
         await ctx.channel.send(embed=embed)
 
-        # TODO: Add moner reloads, moner amount checks, and rules
+    @commands.group(pass_context=True)
+    async def bank(self, ctx: commands.Context):
+        if not ctx.invoked_subcommand:
+            reload_time, total_moners = get_user_bank_info(ctx.author.id)
+            embed = bank_embed(total_moners, reload_time)
+            await ctx.send(embed=embed)
+
+    @bank.command(name="reload")
+    async def reload_bank(self, ctx: commands.Context):
+        reload_amount = reload_user_account(ctx.author.id)
+
+        if reload_amount > 0:
+            announcement_str = f"# Added ${reload_amount:,d} to account!\n"
+        else:
+            announcement_str = "# You are still ineligible to reload your account!\n"
+
+        reload_time, total_moners = get_user_bank_info(ctx.author.id)
+        embed = bank_embed(total_moners, reload_time)
+        await ctx.send(announcement_str, embed=embed)
+
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):

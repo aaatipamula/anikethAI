@@ -1,17 +1,13 @@
-from typing import Optional
-from gamble import Rank, Suit, Card
-import re
+import datetime
 import json
 import random
-import datetime
+import re
 from html.parser import HTMLParser
+from os.path import dirname, join
 from pytz import timezone
 from typing import List, Tuple
-from os.path import join, dirname
 
 import discord
-
-from gamble import Cards
 
 
 class _HtmlToMarkdown(HTMLParser):
@@ -138,6 +134,50 @@ def counting_err(reason: str, correct_count: int, high_score: int) -> discord.Em
     a.add_field(name="High Score", value=high_score, inline=False)
     return a
 
+
+def bank_embed(moners: int, last_reloaded: datetime.datetime):
+    next_reload_time = last_reloaded + datetime.timedelta(days=1)
+    next_reload_str = next_reload_time.strftime("%A, %B %d, %I:%M:%S %p %Z")
+
+    desc = f"**Balance**: ${moners:,d}\n**Next Reload Time**: {next_reload_str}"
+
+    a = discord.Embed(
+        title="Bank Account 💰",
+        description=desc,
+        color=0x7BD389,
+    )
+
+    if moners > 1_000_000:
+        a.set_thumbnail(url="")
+
+    elif 500_000 < moners <= 999_999:
+        a.set_thumbnail(url="")
+
+    elif 100_000 < moners <= 499_999:
+        a.set_thumbnail(url="")
+
+    elif 50_000 < moners <= 99_999:
+        a.set_thumbnail(url="")
+
+    elif 10_000 < moners <= 49_999:
+        a.set_thumbnail(url="")
+
+    elif 500 < moners <= 9999:
+        a.set_thumbnail(url="")
+
+    elif 100 < moners <= 499:
+        a.set_thumbnail(url="")
+
+    elif 50 < moners <= 99:
+        a.set_thumbnail(url="")
+
+    elif 10 < moners <= 49:
+        a.set_thumbnail(url="")
+
+    else:
+        a.set_thumbnail(url="")
+
+    return a
 
 def loop_status(
     name: str, running: bool, next_run: datetime.datetime | None

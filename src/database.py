@@ -1,16 +1,18 @@
 import json
-import datetime
+from datetime import datetime, timedelta
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
 from langchain.schema import messages_from_dict, messages_to_dict
 from sqlalchemy import Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
+from discord.ext.commands import CommandError
 
 db_path = join(dirname(__file__), "data", "bot.db")
 engine = create_engine("sqlite:///" + db_path)
 
 # Make this an env variable eventually
 MEM_LEN = 12
+DEFAULT_MONERS = 500
 
 
 class BaseModel(DeclarativeBase): ...
@@ -21,7 +23,8 @@ class User(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     memory: Mapped[str] = mapped_column(Text(), default="{}")
-    moner: Mapped[int] = mapped_column(Integer(), default=500)
+    moner: Mapped[int] = mapped_column(Integer(), default=DEFAULT_MONERS)
+    last_reload: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
 
 
 class StarredMessage(BaseModel):
@@ -36,7 +39,7 @@ class SentPost(BaseModel):
 
     id: Mapped[str] = mapped_column(Text(), primary_key=True)
     message_id: Mapped[int] = mapped_column(Integer())
-    sent_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 ###############
@@ -109,9 +112,9 @@ def dump_user_mem(_id: int, memory: ConversationBufferWindowMemory) -> None:
         session.commit()
 
 
-##############
-#  Gambling  #
-##############
+#############
+#  Banking  #
+#############
 
 
 def get_user_moner(user_id: int) -> int:
@@ -120,7 +123,7 @@ def get_user_moner(user_id: int) -> int:
         result = session.execute(stmt).first()
         if result is None:
             create_user(session, user_id)
-    return result[0] if result else 500
+    return result[0] if result else DEFAULT_MONERS
 
 
 def update_user_moner(user_id: int, amount: int) -> None:
@@ -128,6 +131,36 @@ def update_user_moner(user_id: int, amount: int) -> None:
     with Session(engine) as session:
         session.execute(stmt)
         session.commit()
+
+
+def reload_user_account(user_id: int) -> int:
+    get_user_info = select(User.moner, User.last_reload).where(User.id == user_id)
+    reload_amount = 0
+
+    with Session(engine) as session:
+        user_info = session.execute(get_user_info).first()
+
+        if user_info is None:
+            create_user(session, user_id)
+            return DEFAULT_MONERS
+
+        user_moner, user_last_reloaded = user_info
+
+        if datetime.now() > user_last_reloaded + timedelta(days=1):
+            stmt = update(User).where(User.id == user_id).values(moner=user_moner + DEFAULT_MONERS, last_reload=datetime.now())
+            session.execute(stmt)
+            session.commit()
+            reload_amount = DEFAULT_MONERS
+
+    return reload_amount
+
+
+def get_user_bank_info(user_id: int) -> tuple[datetime, int]:
+    stmt = select(User.last_reload, User.moner).where(User.id == user_id)
+    with Session(engine) as session:
+        result = session.execute(stmt).first()
+    assert result is not None
+    return result._tuple()
 
 
 ###################
@@ -141,7 +174,7 @@ def is_post_sent(post_id: str) -> bool:
         return session.execute(stmt).first() is not None
 
 
-def add_sent_post(post_id: str, message_id: int, sent_at: datetime.datetime) -> None:
+def add_sent_post(post_id: str, message_id: int, sent_at: datetime) -> None:
     with Session(engine) as session:
         session.add(SentPost(id=post_id, message_id=message_id, sent_at=sent_at))
         session.commit()
