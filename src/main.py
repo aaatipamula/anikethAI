@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from admin import AdminCog
 from database import BaseModel, engine
-from ext import (
+from ext.embeds import (
     bot_error,
     cmd_error,
 )

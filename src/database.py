@@ -160,7 +160,8 @@ def get_user_bank_info(user_id: int) -> tuple[datetime, int]:
     stmt = select(User.last_reload, User.moner).where(User.id == user_id)
     with Session(engine) as session:
         result = session.execute(stmt).first()
-    assert result is not None
+    if result is None:
+        raise CommandError(f"User with ID {user_id} does not have a bank account!")
     return result._tuple()
 
 

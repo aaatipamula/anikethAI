@@ -1,97 +1,12 @@
 import datetime
 import json
 import random
-import re
-from html.parser import HTMLParser
 from os.path import dirname, join
 from pytz import timezone
 from typing import List, Tuple
+from ext.html_parser import HtmlToMarkdown
 
 import discord
-
-
-class _HtmlToMarkdown(HTMLParser):
-    def __init__(self) -> None:
-        super().__init__(convert_charrefs=True)
-        self._parts: list[str] = []
-        self._list_type_stack: list[str] = []
-        self._list_counters: list[int] = []
-        self._pending_href: str = ""
-
-    def handle_starttag(self, tag: str, attrs: list) -> None:
-        attr = dict(attrs)
-        if tag in ("b", "strong"):
-            self._parts.append("**")
-        elif tag in ("i", "em"):
-            self._parts.append("*")
-        elif tag in ("s", "strike", "del"):
-            self._parts.append("~~")
-        elif tag == "u":
-            self._parts.append("__")
-        elif tag == "code":
-            self._parts.append("`")
-        elif tag == "pre":
-            self._parts.append("```\n")
-        elif tag in ("h1", "h2", "h3"):
-            self._parts.append("\n" + "#" * int(tag[1]) + " ")
-        elif tag in ("h4", "h5", "h6"):
-            self._parts.append("\n### ")
-        elif tag == "a":
-            self._pending_href = attr.get("href") or ""
-            self._parts.append("[")
-        elif tag == "br":
-            self._parts.append("\n")
-        elif tag == "p":
-            self._parts.append("\n")
-        elif tag == "ul":
-            self._list_type_stack.append("ul")
-            self._list_counters.append(0)
-        elif tag == "ol":
-            self._list_type_stack.append("ol")
-            self._list_counters.append(0)
-        elif tag == "li":
-            if self._list_type_stack and self._list_type_stack[-1] == "ol":
-                self._list_counters[-1] += 1
-                self._parts.append(f"\n{self._list_counters[-1]}. ")
-            else:
-                self._parts.append("\n- ")
-        elif tag == "blockquote":
-            self._parts.append("\n> ")
-        elif tag == "hr":
-            self._parts.append("\n---\n")
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag in ("b", "strong"):
-            self._parts.append("**")
-        elif tag in ("i", "em"):
-            self._parts.append("*")
-        elif tag in ("s", "strike", "del"):
-            self._parts.append("~~")
-        elif tag == "u":
-            self._parts.append("__")
-        elif tag == "code":
-            self._parts.append("`")
-        elif tag == "pre":
-            self._parts.append("\n```")
-        elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
-            self._parts.append("\n")
-        elif tag == "a":
-            self._parts.append(f"]({self._pending_href})")
-            self._pending_href = ""
-        elif tag == "p":
-            self._parts.append("\n")
-        elif tag in ("ul", "ol"):
-            if self._list_type_stack:
-                self._list_type_stack.pop()
-                self._list_counters.pop()
-
-    def handle_data(self, data: str) -> None:
-        self._parts.append(data)
-
-    def get_markdown(self) -> str:
-        result = "".join(self._parts)
-        result = re.sub(r"\n{3,}", "\n\n", result)
-        return result.strip()
 
 
 commands: dict = json.load(open(join(dirname(__file__), "data", "commands.json")))
@@ -100,13 +15,11 @@ embed_color = 0x5B7DA6
 error_color = 0x991A2D
 
 
-def html_to_markdown(html: str) -> str:
-    parser = _HtmlToMarkdown()
-    parser.feed(html)
-    return parser.get_markdown()
+####################
+#  Generic Embeds  #
+####################
 
 
-# embed for bot errors
 def bot_error(desc: str):
     a = discord.Embed(color=error_color, title="Bot Error", description=desc)
     return a
@@ -128,11 +41,88 @@ def topic_msg(topics: List[str]) -> discord.Embed:
     return a
 
 
+
+###########
+#  Tasks  #
+###########
+
+
+def loop_status(
+    name: str, running: bool, next_run: datetime.datetime | None
+) -> discord.Embed:
+    if next_run:
+        cst = timezone("America/Chicago")
+        next_run = next_run.astimezone(cst)
+        next_str = next_run.strftime("%A, %B %d, %I:%M:%S %p %Z")
+    else:
+        next_str = None
+    desc = f"**Running**: {running}\n\
+    **Next Run**: {next_str}"
+    a = discord.Embed(color=embed_color, title=name, description=desc)
+    return a
+
+
+def rss_embed(
+    post: dict[str, str], timestamp: datetime.datetime, post_id: str
+) -> discord.Embed:
+    desc = HtmlToMarkdown.parse_html(post.get("description", ""))
+
+    # Create the discord embed
+    a = discord.Embed(
+        color=embed_color,
+        title=post.get("title", "N/A"),
+        description=desc,
+        timestamp=timestamp,
+        url=post.get("link"),
+    )
+
+    a.set_footer(text=post_id)
+
+    # Get Object items
+    for item in post.get("enclosures", []):
+        assert isinstance(item, dict)
+        if item.get("type", "").startswith("image/"):
+            a.set_image(url=item.get("url") or item.get("href") or item.get("src"))
+            break
+
+    return a
+
+
+###########
+#  Admin  #
+###########
+
+
+async def admin_dashboard(client, starttime: datetime.datetime):
+    app_info = await client.application_info()
+    td = datetime.datetime.now() - starttime
+    hours = td.seconds // 3600
+    minutes = (td.seconds // 60) % 60
+    seconds = td.seconds - hours * 3600 - minutes * 60
+    desc = f"**Name**: {app_info.name}\n\
+    **Owner**: {app_info.owner}\n\
+    **Command Prefix**: {client.command_prefix}\n\n\
+    **Latency**: {client.latency:0.2f} Seconds\n\
+    **Uptime**: `{td.days} Days {hours} Hours {minutes} Minutes {seconds} Seconds`"
+    a = discord.Embed(color=embed_color, title="Admin Dashboard", description=desc)
+    return a
+
+
+##############
+#  Counting  #
+##############
+
+
 def counting_err(reason: str, correct_count: int, high_score: int) -> discord.Embed:
     a = discord.Embed(color=error_color, title=reason)
     a.add_field(name="Correct Count", value=correct_count, inline=False)
     a.add_field(name="High Score", value=high_score, inline=False)
     return a
+
+
+#############
+#  Banking  #
+#############
 
 
 def bank_embed(moners: int, last_reloaded: datetime.datetime):
@@ -179,60 +169,10 @@ def bank_embed(moners: int, last_reloaded: datetime.datetime):
 
     return a
 
-def loop_status(
-    name: str, running: bool, next_run: datetime.datetime | None
-) -> discord.Embed:
-    if next_run:
-        cst = timezone("America/Chicago")
-        next_run = next_run.astimezone(cst)
-        next_str = next_run.strftime("%A, %B %d, %I:%M:%S %p %Z")
-    else:
-        next_str = None
-    desc = f"**Running**: {running}\n\
-    **Next Run**: {next_str}"
-    a = discord.Embed(color=embed_color, title=name, description=desc)
-    return a
 
-
-def rss_embed(
-    post: dict[str, str], timestamp: datetime.datetime, post_id: str
-) -> discord.Embed:
-    desc = html_to_markdown(post.get("description", ""))
-
-    # Create the discord embed
-    a = discord.Embed(
-        color=embed_color,
-        title=post.get("title", "N/A"),
-        description=desc,
-        timestamp=timestamp,
-        url=post.get("link"),
-    )
-
-    a.set_footer(text=post_id)
-
-    # Get Object items
-    for item in post.get("enclosures", []):
-        assert isinstance(item, dict)
-        if item.get("type", "").startswith("image/"):
-            a.set_image(url=item.get("url") or item.get("href") or item.get("src"))
-            break
-
-    return a
-
-
-async def admin_dashboard(client, starttime: datetime.datetime):
-    app_info = await client.application_info()
-    td = datetime.datetime.now() - starttime
-    hours = td.seconds // 3600
-    minutes = (td.seconds // 60) % 60
-    seconds = td.seconds - hours * 3600 - minutes * 60
-    desc = f"**Name**: {app_info.name}\n\
-    **Owner**: {app_info.owner}\n\
-    **Command Prefix**: {client.command_prefix}\n\n\
-    **Latency**: {client.latency:0.2f} Seconds\n\
-    **Uptime**: `{td.days} Days {hours} Hours {minutes} Minutes {seconds} Seconds`"
-    a = discord.Embed(color=embed_color, title="Admin Dashboard", description=desc)
-    return a
+################
+#  Star Board  #
+################
 
 
 def star_message(message: discord.Message, count: int):
@@ -257,6 +197,11 @@ def star_message(message: discord.Message, count: int):
     if attachments:
         a.add_field(name="Attachments: ", value="\n".join(attachments))
     return a
+
+
+###################
+#  Help Commands  #
+###################
 
 
 # format the help embed for specific command
@@ -323,6 +268,6 @@ def help_command(
         cmd = commands.get(opt, "")
         return format_command(
             opt, cmd, command_prefix
-        ), None  # Known type checking error
+        ), None
 
     return bot_error("Not a valid command."), None

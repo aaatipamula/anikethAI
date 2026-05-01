@@ -34,7 +34,7 @@ def _parse_subs(subs_str: str):
 
 
 def _evaluate_expr(msg: str) -> Optional[int]:
-    from sympy import N, sympify
+    from sympy import N
     from sympy.parsing.latex import parse_latex
 
     # Handle evaluation-at notation before passing to the parser
@@ -57,10 +57,7 @@ def _evaluate_expr(msg: str) -> Optional[int]:
         pass
 
     if expr is None:
-        try:
-            expr = sympify(expr_str)
-        except Exception:
-            return None
+        return None
 
     try:
         if subs:

@@ -1,4 +1,3 @@
-from datetime import timedelta
 from asyncio import sleep as asyncSleep
 from random import choice as randChoice
 from typing import Optional, Tuple, Union
@@ -29,7 +28,7 @@ from database import (
     reload_user_account,
     get_user_bank_info,
 )
-from ext import (
+from ext.embeds import (
     info_msg,
     cmd_error,
     star_message,

@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
 import logging
-from asyncio import TimeoutError  # , sleep as async_sleep
+from asyncio import TimeoutError
 from typing import List, Tuple
 
 import feedparser
@@ -12,7 +12,13 @@ from openai.error import RateLimitError
 
 from chain import create_aniketh_ai
 from database import add_sent_post, is_post_sent
-from ext import admin_dashboard, cmd_error, info_msg, loop_status, rss_embed
+from ext.embeds import (
+    admin_dashboard,
+    cmd_error,
+    info_msg,
+    loop_status,
+    rss_embed,
+)
 from topicQueue import TopicQueue
 from users import UserCog
 from util import LowerStr
