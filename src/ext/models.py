@@ -1,17 +1,18 @@
-from typing import TypedDict
+from typing import TypedDict, NotRequired
 
 
 class CommandParam(TypedDict):
     name: str
     optional: bool
-    type: str
+    default: NotRequired[str]
     data_type: str
     description: str
-    notes: str | None
+    notes: NotRequired[str | None]
 
 
 class CommandHelp(TypedDict):
     hidden: bool
+    has_helptext: NotRequired[bool]
     cmd_desc: str
     params: list[CommandParam] | None
     usage: list[str]

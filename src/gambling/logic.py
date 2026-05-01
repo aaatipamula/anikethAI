@@ -9,8 +9,6 @@ from gambling.models import Card, Cards, DECK, Rank, Suit
 def convert_suit(argument: str) -> Suit | None:
     arg = argument.lower()
 
-    print("Suit Arg: ", arg)
-
     match arg:
         case "spade" | "spades" | "♠️":
             return Suit.SPADES
@@ -26,8 +24,6 @@ def convert_suit(argument: str) -> Suit | None:
 
 def convert_rank(argument: str) -> Rank | None:
     arg = argument.lower()
-
-    print("Rank Arg: ", arg)
 
     match arg:
         case "a" | "ace":

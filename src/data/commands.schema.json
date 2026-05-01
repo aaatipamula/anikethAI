@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/$defs/CommandHelp"
+  },
+  "$defs": {
+    "CommandParam": {
+      "type": "object",
+      "required": ["name", "optional", "data_type", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "optional": { "type": "boolean" },
+        "default": { "type": "string" },
+        "data_type": { "type": "string" },
+        "description": { "type": "string" },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "CommandHelp": {
+      "type": "object",
+      "required": ["hidden", "cmd_desc", "params", "usage"],
+      "additionalProperties": false,
+      "properties": {
+        "has_helptext": { "type": "boolean" },
+        "hidden": { "type": "boolean" },
+        "cmd_desc": { "type": "string" },
+        "params": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/CommandParam" }
+            }
+          ]
+        },
+        "usage": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

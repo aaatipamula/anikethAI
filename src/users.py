@@ -144,8 +144,6 @@ class UserCog(commands.Cog):
         author_id = ctx.author.id
         rank, suit, all_in = parse_raw_guess(list(args))
 
-        # print("Rank: ", rank, "Suit: ", suit)
-
         # Both rank and suit cannot be empty
         if rank is None and suit is None:
             err_msg = gambling_error("You must specify a rank, suit, or card")

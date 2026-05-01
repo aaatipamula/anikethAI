@@ -8,10 +8,12 @@ from typing import List, Tuple
 import discord
 
 from ext.html_parser import HtmlToMarkdown
-from ext.models import CommandHelp
+from ext.models import CommandHelp, CommandParam
 
 
-commands_json = Path() / "src/data/commands.json"
+data_dir = Path() / "src/data"
+helptext_dir = data_dir / "helptext"
+commands_json = data_dir / "commands.json"
 commands: dict[str, CommandHelp] = json.load(open(commands_json))
 
 embed_color = 0x5B7DA6
@@ -206,30 +208,59 @@ def star_message(message: discord.Message, count: int):
 #  Help Commands  #
 ###################
 
+# Text loading helper
+def _load_helptext(cmd_name: str) -> str | None: 
+    helptext_file_name = helptext_dir / f"{cmd_name}.md"
+    try:
+        with open(helptext_file_name, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
+
+def _format_opt(param: CommandParam) -> str:
+    param_str = "`" + param["name"]
+
+    if param["optional"]:
+        param_str += "?"
+    if default := param.get("default"):
+        param_str += f" = {default}"
+
+    return param_str + "`"
+
+
+def _format_params(params: list[CommandParam] | None) -> str:
+    if params:
+        return ", ".join(_format_opt(param) for param in params)
+    return ""
+
 
 # format the help embed for specific command
 def format_command(name: str, command: CommandHelp, prefix: str) -> discord.Embed:
-    opts = [param["name"] for param in command["params"]] if command["params"] else []
+    params_str = _format_params(command["params"])
+    helptext = _load_helptext(name)
+
     cmdEmbed = discord.Embed(
-        title=f"{name} ({', '.join(opts)})",
+        title=f"{name} {params_str}",
         color=embed_color,
-        description=command["cmd_desc"],
+        description=helptext or command["cmd_desc"],
     )
+
     if command["params"]:
         for param in command["params"]:
-            value_format = f"**Type**: {param['type']}\n\
-                **Data**: {param['data_type']}\n\
+            value_format = f"**Data**: {param['data_type']}\n\
                 **Optional**: {param['optional']}\n\
                 **Description**: {param['description']}"
-            if param.get("notes"):
-                value_format += f"\n**Notes**: {param['notes']}"
+            if default := param.get("default"):
+                value_format += f"\n**Default**: {default}"
+            if notes := param.get("notes"):
+                value_format += f"\n**Notes**: {notes}"
             cmdEmbed.add_field(name=param["name"], value=value_format)
 
-    usageStr = ""
+    usage_str = ""
     for usage in command["usage"]:
-        usageStr += f"`{prefix}{usage}`\n"
+        usage_str += f"`{prefix}{usage}`\n"
 
-    cmdEmbed.add_field(name="Usage:", value=usageStr, inline=False)
+    cmdEmbed.add_field(name="Usage:", value=usage_str, inline=False)
 
     return cmdEmbed
 

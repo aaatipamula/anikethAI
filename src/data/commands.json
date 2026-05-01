@@ -1,12 +1,15 @@
 {
+  "$schema": "./commands.schema.json",
+
   "gamble": {
     "hidden": false,
-    "cmd_desc": "# Game Layout\n\nYou are dealt 4 cards from the deck. You can choose a suit, rank, or specific card that you think will appear in your dealt hand.\n# Multipliers\n\nIf you get the suit, a 2x multiplier is applied to your gambled amount\nIf you get the rank, a 4x multiplier is applied to your gambled amount\nIf you get the card, an 8x multiplier is applied to your gambled amount\n",
+    "has_helptext": true,
+    "cmd_desc": "Play the gambling game!",
     "params": [
       {
         "name": "amount",
         "optional": true,
-        "type": "positional",
+        "default": "50",
         "data_type": "integer",
         "description": "The amount of moner you would like to gamble",
         "notes": "The amount will default to 50 moner if you don't specify. You cannot gamble more than you have!"
@@ -14,7 +17,6 @@
       {
         "name": "card-rank-suit",
         "optional": false,
-        "type": "positional",
         "data_type": "Card|Rank|Suit",
         "description": "The rank, or suit, card to gamble on.",
         "notes": "AnikethAI will try its very best to parse what you mean but try to be clear!"
@@ -29,7 +31,7 @@
 
   "bank": {
     "hidden": false,
-    "cmd_desc": "Check your bank account",
+    "cmd_desc": "Check your bank account and see at what time you can reload your account!",
     "params": null,
     "usage": [
       "bank"
@@ -52,7 +54,6 @@
       {
         "name": "topic",
         "optional": false,
-        "type": "positional",
         "data_type": "string",
         "description": "The topic to add in english.",
         "notes": "Please keep topic under 50 characters."
@@ -78,7 +79,6 @@
       {
         "name": "topics",
         "optional": true,
-        "type": "positional",
         "data_type": "list of numbers",
         "description": "Which topics to remove from queue by number in the queue.",
         "notes": "This can be one or multiple topics."
@@ -86,7 +86,6 @@
       {
         "name": "topic",
         "optional": true,
-        "type": "flag",
         "data_type": "string",
         "description": "The topic to remove.",
         "notes": "Please keep this under 50 characters."
@@ -94,10 +93,8 @@
       {
         "name": "span",
         "optional": true,
-        "type": "flag",
         "data_type": "two numbers",
-        "description": "A range of topics to remove from the queue.",
-        "notes": null
+        "description": "A range of topics to remove from the queue."
       }
     ],
     "usage": [
@@ -115,7 +112,6 @@
       {
         "name": "topic",
         "optional": true,
-        "type": "positional",
         "data_type": "string",
         "description": "The topic to send a thought on.",
         "notes": "Please keep this under 50 characters."
@@ -141,7 +137,6 @@
       {
         "name": "task_name",
         "optional": false,
-        "type": "positional",
         "data_type": "str",
         "description": "The task to start or stop.",
         "notes": "Must be one of `rss` or `status`."
@@ -157,7 +152,6 @@
       {
         "name": "task_name",
         "optional": false,
-        "type": "positional",
         "data_type": "str",
         "description": "The task to start or stop.",
         "notes": "Must be one of `rss` or `status`."
@@ -201,7 +195,7 @@
       {
         "name": "stars",
         "optional": false,
-        "type": "positional",
+        "default": "3",
         "data_type": "int",
         "description": "The minimum number of stars",
         "notes": "Must be a valid integer, defaults to 3."
@@ -217,7 +211,7 @@
       {
         "name": "channel",
         "optional": false,
-        "type": "positional",
+        "default": "DUMP_CHANNEL",
         "data_type": "text_channel",
         "description": "The channel to become the starboard.",
         "notes": "Must be a valid channel, defaults to the dump channel."
@@ -233,7 +227,7 @@
       {
         "name": "days",
         "optional": true,
-        "type": "keyword",
+        "default": "0",
         "data_type": "int",
         "description": "How many days ago to pull posts from",
         "notes": "Defaults to 0"
@@ -241,7 +235,7 @@
       {
         "name": "hours",
         "optional": true,
-        "type": "keyword",
+        "default": "12",
         "data_type": "int",
         "description": "How many hours ago to pull posts from",
         "notes": "Defaults to 12"
@@ -249,7 +243,7 @@
       {
         "name": "minutes",
         "optional": true,
-        "type": "keyword",
+        "default": "0",
         "data_type": "int",
         "description": "How many hours ago to pull posts from",
         "notes": "Defaults to 0"
@@ -265,7 +259,6 @@
       {
         "name": "channel",
         "optional": false,
-        "type": "positional",
         "data_type": "text_channel",
         "description": "The channel to set RSS feed dumps into",
         "notes": "This must be a valid text channel."
@@ -281,7 +274,6 @@
       {
         "name": "url",
         "optional": false,
-        "type": "positional",
         "data_type": "str",
         "description": "The URL to add to the list of feeds to update",
         "notes": "This must be a valid RSS url."

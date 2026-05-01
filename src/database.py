@@ -147,11 +147,13 @@ def reload_user_account(user_id: int) -> int:
 
         user_moner, user_last_reloaded = user_info
 
+        # Reloaded amount is 1/2 the default loaded amount
         if datetime.now() > user_last_reloaded + timedelta(days=1):
-            stmt = update(User).where(User.id == user_id).values(moner=user_moner + DEFAULT_MONERS, last_reload=datetime.now())
+            total_moner = user_moner + (DEFAULT_MONERS >> 1)
+            stmt = update(User).where(User.id == user_id).values(moner=total_moner, last_reload=datetime.now())
             session.execute(stmt)
             session.commit()
-            reload_amount = DEFAULT_MONERS
+            reload_amount = DEFAULT_MONERS >> 1
 
     return reload_amount
 
