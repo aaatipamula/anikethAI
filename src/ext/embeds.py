@@ -1,15 +1,18 @@
 import datetime
 import json
 import random
-from os.path import dirname, join
+from pathlib import Path
 from pytz import timezone
 from typing import List, Tuple
-from ext.html_parser import HtmlToMarkdown
 
 import discord
 
+from ext.html_parser import HtmlToMarkdown
+from ext.models import CommandHelp
 
-commands: dict = json.load(open(join(dirname(__file__), "data", "commands.json")))
+
+commands_json = Path() / "src/data/commands.json"
+commands: dict[str, CommandHelp] = json.load(open(commands_json))
 
 embed_color = 0x5B7DA6
 error_color = 0x991A2D
@@ -205,7 +208,7 @@ def star_message(message: discord.Message, count: int):
 
 
 # format the help embed for specific command
-def format_command(name: str, command: dict, prefix: str) -> discord.Embed:
+def format_command(name: str, command: CommandHelp, prefix: str) -> discord.Embed:
     opts = [param["name"] for param in command["params"]] if command["params"] else []
     cmdEmbed = discord.Embed(
         title=f"{name} ({', '.join(opts)})",
@@ -265,7 +268,8 @@ def help_command(
         return cmdEmbed, adminEmbed
 
     elif opt in commands:
-        cmd = commands.get(opt, "")
+        cmd = commands.get(opt)
+        assert cmd is not None
         return format_command(
             opt, cmd, command_prefix
         ), None
