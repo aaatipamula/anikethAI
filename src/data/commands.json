@@ -36,6 +36,15 @@
     ]
   },
 
+  "bank-reload": {
+    "hidden": false,
+    "cmd_desc": "Reload your bank account! This can only be done **once** a day!",
+    "params": null,
+    "usage": [
+      "bank reload"
+    ]
+  },
+
   "request": {
     "hidden": false,
     "cmd_desc": "Add topic(s) to the topic queue.",
