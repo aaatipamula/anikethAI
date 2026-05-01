@@ -25,7 +25,9 @@ class User(BaseModel):
     id: Mapped[int] = mapped_column(primary_key=True)
     memory: Mapped[str] = mapped_column(Text(), default="{}")
     moner: Mapped[int] = mapped_column(Integer(), default=DEFAULT_MONERS)
-    last_reload: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+    last_reload: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.now
+    )
 
 
 class StarredMessage(BaseModel):
@@ -150,7 +152,11 @@ def reload_user_account(user_id: int) -> int:
         # Reloaded amount is 1/2 the default loaded amount
         if datetime.now() > user_last_reloaded + timedelta(days=1):
             total_moner = user_moner + (DEFAULT_MONERS >> 1)
-            stmt = update(User).where(User.id == user_id).values(moner=total_moner, last_reload=datetime.now())
+            stmt = (
+                update(User)
+                .where(User.id == user_id)
+                .values(moner=total_moner, last_reload=datetime.now())
+            )
             session.execute(stmt)
             session.commit()
             reload_amount = DEFAULT_MONERS >> 1

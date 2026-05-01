@@ -23,6 +23,7 @@ openapi-schema-pydantic==1.2.4
 packaging==24.2
 propcache==0.3.1
 pydantic==1.10.21
+psycopg2-binary>=2.9
 python-dotenv==0.21.1
 pytz==2022.1
 PyYAML==6.0.2

@@ -95,4 +95,3 @@ def gambling_error(msg: str):
     )
 
     return a
-

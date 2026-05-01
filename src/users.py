@@ -202,7 +202,6 @@ class UserCog(commands.Cog):
         embed = bank_embed(total_moners, reload_time)
         await ctx.send(announcement_str, embed=embed)
 
-
     @commands.Cog.listener()
     async def on_message(self, message: Message):
         # ignore if self

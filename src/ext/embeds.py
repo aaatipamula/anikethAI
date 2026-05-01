@@ -46,7 +46,6 @@ def topic_msg(topics: List[str]) -> discord.Embed:
     return a
 
 
-
 ###########
 #  Tasks  #
 ###########
@@ -208,14 +207,16 @@ def star_message(message: discord.Message, count: int):
 #  Help Commands  #
 ###################
 
+
 # Text loading helper
-def _load_helptext(cmd_name: str) -> str | None: 
+def _load_helptext(cmd_name: str) -> str | None:
     helptext_file_name = helptext_dir / f"{cmd_name}.md"
     try:
         with open(helptext_file_name, "r") as f:
             return f.read()
     except FileNotFoundError:
         return None
+
 
 def _format_opt(param: CommandParam) -> str:
     param_str = "`" + param["name"]
@@ -301,8 +302,6 @@ def help_command(
     elif opt in commands:
         cmd = commands.get(opt)
         assert cmd is not None
-        return format_command(
-            opt, cmd, command_prefix
-        ), None
+        return format_command(opt, cmd, command_prefix), None
 
     return bot_error("Not a valid command."), None

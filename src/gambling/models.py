@@ -47,4 +47,3 @@ class Card:
 
 Cards = list[Card]
 DECK: Cards = [Card(rank, suit) for suit in Suit for rank in Rank]
-

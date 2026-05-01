@@ -90,5 +90,3 @@ class HtmlToMarkdown(HTMLParser):
         parser = cls()
         parser.feed(html)
         return parser.get_markdown()
-
-

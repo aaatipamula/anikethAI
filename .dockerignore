@@ -2,4 +2,5 @@ __*
 .git
 .gitignore
 *.log
+.venv
 
