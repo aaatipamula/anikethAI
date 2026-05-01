@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
 from langchain.schema import messages_from_dict, messages_to_dict
-from sqlalchemy import Text, Integer, DateTime, select, update, delete, create_engine
+from sqlalchemy import BigInteger, Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
 
@@ -22,7 +22,7 @@ class BaseModel(DeclarativeBase): ...
 class User(BaseModel):
     __tablename__ = "Users"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
     memory: Mapped[str] = mapped_column(Text(), default="{}")
     moner: Mapped[int] = mapped_column(Integer(), default=DEFAULT_MONERS)
     last_reload: Mapped[datetime] = mapped_column(
@@ -33,15 +33,15 @@ class User(BaseModel):
 class StarredMessage(BaseModel):
     __tablename__ = "StarredMessages"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    board_message: Mapped[int] = mapped_column(Integer())
+    id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
+    board_message: Mapped[int] = mapped_column(BigInteger())
 
 
 class SentPost(BaseModel):
     __tablename__ = "SentPosts"
 
     id: Mapped[str] = mapped_column(Text(), primary_key=True)
-    message_id: Mapped[int] = mapped_column(Integer())
+    message_id: Mapped[int] = mapped_column(BigInteger())
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
