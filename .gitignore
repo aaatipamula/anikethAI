@@ -1,7 +1,14 @@
 .env
+
 test*
 *.log
 *.db
-__*
-.venv/
 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Tools
+.venv/
+.ruff_cache/
