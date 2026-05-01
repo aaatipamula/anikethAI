@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime, timedelta
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
@@ -7,8 +8,8 @@ from sqlalchemy import Text, Integer, DateTime, select, update, delete, create_e
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
 
-db_path = join(dirname(__file__), "data", "bot.db")
-engine = create_engine("sqlite:///" + db_path)
+_default_db = "sqlite:///" + join(dirname(__file__), "data", "bot.db")
+engine = create_engine(os.getenv("DATABASE_URL", _default_db))
 
 # Make this an env variable eventually
 MEM_LEN = 12
