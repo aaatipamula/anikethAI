@@ -7,6 +7,7 @@ from typing import List, Tuple
 
 import discord
 
+from util import get_env
 from ext.html_parser import HtmlToMarkdown
 from ext.models import CommandHelp, CommandParam
 
@@ -16,8 +17,11 @@ helptext_dir = data_dir / "helptext"
 commands_json = data_dir / "commands.json"
 commands: dict[str, CommandHelp] = json.load(open(commands_json))
 
-embed_color = 0x5B7DA6
-error_color = 0x991A2D
+EMBED_COLOR = 0x5B7DA6
+ERROR_COLOR = 0x991A2D
+BANK_COLOR = 0x414288
+
+COMMAND_PREFIX = get_env("COMMAND_PREFIX")
 
 
 ####################
@@ -26,23 +30,23 @@ error_color = 0x991A2D
 
 
 def bot_error(desc: str):
-    a = discord.Embed(color=error_color, title="Bot Error", description=desc)
+    a = discord.Embed(color=ERROR_COLOR, title="Bot Error", description=desc)
     return a
 
 
 def cmd_error(desc: str):
-    a = discord.Embed(color=error_color, title="Command Error", description=desc)
+    a = discord.Embed(color=ERROR_COLOR, title="Command Error", description=desc)
     return a
 
 
 def info_msg(desc: str):
-    a = discord.Embed(color=embed_color, title="Info", description=desc)
+    a = discord.Embed(color=EMBED_COLOR, title="Info", description=desc)
     return a
 
 
 def topic_msg(topics: List[str]) -> discord.Embed:
     desc = "\n".join([f"{num}. {topic}" for num, topic in enumerate(topics)])
-    a = discord.Embed(color=embed_color, title="Topics in queue:", description=desc)
+    a = discord.Embed(color=EMBED_COLOR, title="Topics in queue:", description=desc)
     return a
 
 
@@ -62,7 +66,7 @@ def loop_status(
         next_str = None
     desc = f"**Running**: {running}\n\
     **Next Run**: {next_str}"
-    a = discord.Embed(color=embed_color, title=name, description=desc)
+    a = discord.Embed(color=EMBED_COLOR, title=name, description=desc)
     return a
 
 
@@ -73,7 +77,7 @@ def rss_embed(
 
     # Create the discord embed
     a = discord.Embed(
-        color=embed_color,
+        color=EMBED_COLOR,
         title=post.get("title", "N/A"),
         description=desc,
         timestamp=timestamp,
@@ -108,7 +112,7 @@ async def admin_dashboard(client, starttime: datetime.datetime):
     **Command Prefix**: {client.command_prefix}\n\n\
     **Latency**: {client.latency:0.2f} Seconds\n\
     **Uptime**: `{td.days} Days {hours} Hours {minutes} Minutes {seconds} Seconds`"
-    a = discord.Embed(color=embed_color, title="Admin Dashboard", description=desc)
+    a = discord.Embed(color=EMBED_COLOR, title="Admin Dashboard", description=desc)
     return a
 
 
@@ -118,7 +122,7 @@ async def admin_dashboard(client, starttime: datetime.datetime):
 
 
 def counting_err(reason: str, correct_count: int, high_score: int) -> discord.Embed:
-    a = discord.Embed(color=error_color, title=reason)
+    a = discord.Embed(color=ERROR_COLOR, title=reason)
     a.add_field(name="Correct Count", value=correct_count, inline=False)
     a.add_field(name="High Score", value=high_score, inline=False)
     return a
@@ -138,7 +142,7 @@ def bank_embed(moners: int, last_reloaded: datetime.datetime):
     a = discord.Embed(
         title="Bank Account 💰",
         description=desc,
-        color=0x7BD389,
+        color=BANK_COLOR,
     )
 
     if moners > 1_000_000:
@@ -182,7 +186,7 @@ def bank_embed(moners: int, last_reloaded: datetime.datetime):
 def star_message(message: discord.Message, count: int):
     a = discord.Embed(
         title=message.author.display_name,
-        color=embed_color,
+        color=EMBED_COLOR,
         timestamp=datetime.datetime.now(),
         description=f":star: {count}",
     )
@@ -236,13 +240,13 @@ def _format_params(params: list[CommandParam] | None) -> str:
 
 
 # format the help embed for specific command
-def format_command(name: str, command: CommandHelp, prefix: str) -> discord.Embed:
+def format_command(name: str, command: CommandHelp) -> discord.Embed:
     params_str = _format_params(command["params"])
     helptext = _load_helptext(name)
 
     cmdEmbed = discord.Embed(
         title=f"{name} {params_str}",
-        color=embed_color,
+        color=EMBED_COLOR,
         description=helptext or command["cmd_desc"],
     )
 
@@ -259,7 +263,7 @@ def format_command(name: str, command: CommandHelp, prefix: str) -> discord.Embe
 
     usage_str = ""
     for usage in command["usage"]:
-        usage_str += f"`{prefix}{usage}`\n"
+        usage_str += f"`{COMMAND_PREFIX}{usage}`\n"
 
     cmdEmbed.add_field(name="Usage:", value=usage_str, inline=False)
 
@@ -268,25 +272,25 @@ def format_command(name: str, command: CommandHelp, prefix: str) -> discord.Embe
 
 # help command, scalable through the commands.json file
 def help_command(
-    opt: str, command_prefix: str, about_me: str, is_owner: bool = False
+    opt: str, about_me: str, is_owner: bool = False
 ) -> Tuple[discord.Embed, discord.Embed | None]:
 
     messages = ["Help Has Arrived!", "At Your Service!"]
 
     if opt == "general":
         cmdEmbed = discord.Embed(
-            title=random.choice(messages), color=embed_color, description=about_me
+            title=random.choice(messages), color=EMBED_COLOR, description=about_me
         )
         for name, command in commands.items():
             if not command.get("hidden"):
                 cmdEmbed.add_field(
                     name=name, value=command.get("cmd_desc"), inline=False
                 )
-        cmdEmbed.set_footer(text=f"Bot Command Prefix = '{command_prefix}'")
+        cmdEmbed.set_footer(text=f"Bot Command Prefix = '{COMMAND_PREFIX}'")
         if is_owner:
             adminEmbed = discord.Embed(
                 title="Admin Commands",
-                color=embed_color,
+                color=EMBED_COLOR,
                 description="Commands for the owner to use.",
             )
             for name, command in commands.items():
@@ -302,6 +306,6 @@ def help_command(
     elif opt in commands:
         cmd = commands.get(opt)
         assert cmd is not None
-        return format_command(opt, cmd, command_prefix), None
+        return format_command(opt, cmd), None
 
     return bot_error("Not a valid command."), None

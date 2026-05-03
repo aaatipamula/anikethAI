@@ -1,5 +1,6 @@
-import math
+import os
 import re
+import math
 import pytz
 import random
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
@@ -92,6 +93,17 @@ def random_messages(messages: List[MessageValues], content: str):
             yield response() if callable(response) else response
 
 
+def to_timezone(timezone: str, dt: datetime) -> datetime:
+    try:
+        tz = pytz.timezone(timezone)
+    except pytz.UnknownTimeZoneError:
+        tz = pytz.utc
+
+    if dt.tzinfo is None:
+        return tz.localize(dt)
+    return dt.astimezone(tz)
+
+
 def normalize_tz(timezone: str, start_hour: int):
     try:
         tz = pytz.timezone(timezone)
@@ -108,3 +120,14 @@ def normalize_tz(timezone: str, start_hour: int):
         time(hour=(start_hour + 12) % 24, tzinfo=local_tzinfo),
         time(hour=(start_hour + 18) % 24, tzinfo=local_tzinfo),
     )
+
+
+###################
+#  ENV Variables  #
+###################
+
+def get_env(key: str) -> str:
+    val = os.environ.get(key)
+    if not val:
+        raise ValueError(f"Required ENV variable {key} missing!")
+    return val

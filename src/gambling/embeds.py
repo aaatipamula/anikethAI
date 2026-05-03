@@ -3,7 +3,10 @@ from typing import Optional
 
 from discord import Embed
 
+from util import get_env
 from gambling.models import Card, Cards, Rank, Suit
+
+COMMAND_PREFIX = get_env("COMMAND_PREFIX")
 
 WIN_EMOJI = [
     "<a:lebron:1499437764465397780>",
@@ -80,7 +83,7 @@ def gambling_embed(
         )
 
     if total_moners <= 0:
-        a.set_footer(text=f"Balance: {total_moners} (Reload with `.bank reload`)")
+        a.set_footer(text=f"Balance: {total_moners} (Reload with `{COMMAND_PREFIX}bank reload`)")
     else:
         a.set_footer(text=f"Balance: {total_moners}")
 

@@ -1,3 +1,5 @@
+from datetime import datetime
+from pytz import timezone, utc, UnknownTimeZoneError
 from asyncio import sleep as asyncSleep
 from random import choice as randChoice
 from typing import Optional, Tuple, Union
@@ -7,7 +9,7 @@ from discord.ext import commands
 from openai.error import RateLimitError
 
 from chain import create_aniketh_ai
-from consts import NO_TOKENS, RANDOM_REPLYS, CST
+from consts import NO_TOKENS, RANDOM_REPLYS
 from gambling import (
     deal_cards,
     gambling_embed,
@@ -16,7 +18,7 @@ from gambling import (
     parse_raw_guess,
 )
 from topicQueue import TopicQueue
-from util import convert_to_int, random_messages
+from util import convert_to_int, random_messages, to_timezone
 from database import (
     get_user_mem,
     dump_user_mem,
@@ -51,6 +53,7 @@ class UserCog(commands.Cog):
         bot: commands.Bot,
         topic_queue: TopicQueue,
         about_me: str,
+        timezone_str: str,
         *,
         starboard_channel_id: Optional[int] = None,
         counting_channel_id: Optional[int] = None,
@@ -58,9 +61,10 @@ class UserCog(commands.Cog):
         self.bot = bot
         self.topic_queue = topic_queue
         self.about_me = about_me
+        self._timezone_str = timezone_str
         self.star_threshold = 3
-        self.starboard_id = starboard_channel_id
-        self.counting_channel_id = counting_channel_id
+        self._starboard_id = starboard_channel_id
+        self._counting_channel_id = counting_channel_id
 
         self.counting_current_number = 1
         self.counting_last_author: Optional[Union[User, Member]] = None
@@ -68,15 +72,30 @@ class UserCog(commands.Cog):
 
     @property
     def starboard(self):
-        c = self.bot.get_channel(self.starboard_id or 0)
+        c = self.bot.get_channel(self._starboard_id or 0)
         assert isinstance(c, TextChannel) or c is None
         return c
 
     @property
     def counting(self):
-        c = self.bot.get_channel(self.counting_channel_id or 0)
+        c = self.bot.get_channel(self._counting_channel_id or 0)
         assert isinstance(c, TextChannel) or c is None
         return c
+
+    @property
+    def timezone(self):
+        try:
+            tz = timezone(self._timezone_str)
+        except UnknownTimeZoneError:
+            tz = utc
+
+        return tz
+
+    def localize_dt(self, dt: datetime) -> datetime:
+        tz = self.timezone
+        if dt.tzinfo is None:
+            return tz.localize(dt)
+        return dt.astimezone(tz)
 
     @commands.command()
     async def request(self, ctx, *, topic):
@@ -186,8 +205,7 @@ class UserCog(commands.Cog):
     async def bank(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             reload_time, total_moners = get_user_bank_info(ctx.author.id)
-            reload_time.replace(tzinfo=CST)
-            embed = bank_embed(total_moners, reload_time)
+            embed = bank_embed(total_moners, self.localize_dt(reload_time))
             await ctx.send(embed=embed)
 
     @bank.command(name="reload")
@@ -200,8 +218,7 @@ class UserCog(commands.Cog):
             announcement_str = "# You are still ineligible to reload your account!\n"
 
         reload_time, total_moners = get_user_bank_info(ctx.author.id)
-        reload_time.replace(tzinfo=CST)
-        embed = bank_embed(total_moners, reload_time)
+        embed = bank_embed(total_moners, self.localize_dt(reload_time))
         await ctx.send(announcement_str, embed=embed)
 
     @commands.Cog.listener()

@@ -15,27 +15,19 @@ from ext.embeds import (
 )
 from topicQueue import QueueError, TopicQueue
 from users import UserCog
-from util import normalize_tz
+from util import normalize_tz, get_env
 
 load_dotenv()
 
 
-# ENV variable loader
-def _get_env(key: str) -> str:
-    val = os.environ.get(key)
-    if not val:
-        raise ValueError(f"Required ENV variable {key} missing!")
-    return val
-
-
-TOKEN = _get_env("TOKEN")
-ABOUT_ME = _get_env("ABOUT_ME")
-COMMAND_PREFIX = _get_env("COMMAND_PREFIX")
-TIMEZONE = _get_env("TIMEZONE")
+TOKEN = get_env("TOKEN")
+ABOUT_ME = get_env("ABOUT_ME")
+COMMAND_PREFIX = get_env("COMMAND_PREFIX")
+TIMEZONE = get_env("TIMEZONE")
 START_HOUR = int(os.environ.get("START_HOUR", "10"))
-DUMP_CHANNEL = int(_get_env("DUMP_CHANNEL"))
-COUNTING_CHANNEL = int(_get_env("COUNTING_CHANNEL"))
-RSS_CHANNEL = int(_get_env("RSS_CHANNEL"))
+DUMP_CHANNEL = int(get_env("DUMP_CHANNEL"))
+COUNTING_CHANNEL = int(get_env("COUNTING_CHANNEL"))
+RSS_CHANNEL = int(get_env("RSS_CHANNEL"))
 RSS_FILE = join(dirname(__file__), "data", "rss.txt")
 
 # Declaring gateway intents, discord.py >= 2.0 feature
@@ -69,9 +61,21 @@ client = commands.Bot(
     help_command=None,
 )
 
-# create our cogs
-admin_cog = AdminCog(client, GLOBAL_QUEUE, DUMP_CHANNEL, RSS_FILE, rss_channel_id=RSS_CHANNEL)
-user_cog = UserCog(client, GLOBAL_QUEUE, ABOUT_ME, counting_channel_id=COUNTING_CHANNEL)
+# Create cogs
+admin_cog = AdminCog(
+    client,
+    GLOBAL_QUEUE,
+    DUMP_CHANNEL,
+    RSS_FILE,
+    rss_channel_id=RSS_CHANNEL
+)
+user_cog = UserCog(
+    client,
+    GLOBAL_QUEUE,
+    ABOUT_ME,
+    TIMEZONE,
+    counting_channel_id=COUNTING_CHANNEL,
+)
 
 # Create the user db
 BaseModel.metadata.create_all(engine)

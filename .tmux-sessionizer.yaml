@@ -2,4 +2,4 @@ name: ani
 windows:
   - server: 
   - nvim: nvim .
-  - claude: jai claude
+  - claude: claude

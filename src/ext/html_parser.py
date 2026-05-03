@@ -9,6 +9,7 @@ class HtmlToMarkdown(HTMLParser):
         self._list_type_stack: list[str] = []
         self._list_counters: list[int] = []
         self._pending_href: str = ""
+        self._anchor_start: int = -1
 
     def handle_starttag(self, tag: str, attrs: list) -> None:
         attr = dict(attrs)
@@ -30,7 +31,7 @@ class HtmlToMarkdown(HTMLParser):
             self._parts.append("\n### ")
         elif tag == "a":
             self._pending_href = attr.get("href") or ""
-            self._parts.append("[")
+            self._anchor_start = len(self._parts)
         elif tag == "br":
             self._parts.append("\n")
         elif tag == "p":
@@ -68,8 +69,14 @@ class HtmlToMarkdown(HTMLParser):
         elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
             self._parts.append("\n")
         elif tag == "a":
-            self._parts.append(f"]({self._pending_href})")
+            inner = "".join(self._parts[self._anchor_start :])
+            del self._parts[self._anchor_start :]
+            if self._pending_href != inner:
+                self._parts.append(f"[{inner}]({self._pending_href})")
+            else:
+                self._parts.append(self._pending_href)
             self._pending_href = ""
+            self._anchor_start = -1
         elif tag == "p":
             self._parts.append("\n")
         elif tag in ("ul", "ol"):

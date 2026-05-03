@@ -1,13 +1,12 @@
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
 from langchain.schema import messages_from_dict, messages_to_dict
 from sqlalchemy import BigInteger, Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
-from consts import CST
 
 _default_db = "sqlite:///" + join(dirname(__file__), "data", "bot.db")
 engine = create_engine(os.getenv("DATABASE_URL", _default_db))
@@ -151,12 +150,12 @@ def reload_user_account(user_id: int) -> int:
         user_moner, user_last_reloaded = user_info
 
         # Reloaded amount is 1/2 the default loaded amount
-        if datetime.now(tz=CST) > user_last_reloaded + timedelta(days=1):
+        if datetime.now(tz=UTC) > user_last_reloaded + timedelta(days=1):
             total_moner = user_moner + (DEFAULT_MONERS >> 1)
             stmt = (
                 update(User)
                 .where(User.id == user_id)
-                .values(moner=total_moner, last_reload=datetime.now(tz=CST))
+                .values(moner=total_moner, last_reload=datetime.now(tz=UTC))
             )
             session.execute(stmt)
             session.commit()
