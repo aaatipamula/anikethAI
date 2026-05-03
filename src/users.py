@@ -18,7 +18,7 @@ from gambling import (
     parse_raw_guess,
 )
 from topicQueue import TopicQueue
-from util import convert_to_int, random_messages, to_timezone
+from util import convert_to_int, random_messages
 from database import (
     get_user_mem,
     dump_user_mem,
