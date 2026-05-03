@@ -93,17 +93,6 @@ def random_messages(messages: List[MessageValues], content: str):
             yield response() if callable(response) else response
 
 
-def to_timezone(timezone: str, dt: datetime) -> datetime:
-    try:
-        tz = pytz.timezone(timezone)
-    except pytz.UnknownTimeZoneError:
-        tz = pytz.utc
-
-    if dt.tzinfo is None:
-        return tz.localize(dt)
-    return dt.astimezone(tz)
-
-
 def normalize_tz(timezone: str, start_hour: int):
     try:
         tz = pytz.timezone(timezone)

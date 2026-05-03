@@ -307,16 +307,12 @@ class AdminCog(commands.Cog):
 
     @admin.command()
     async def starboard(self, ctx: commands.Context, channel: TextChannel):
-        user_cog = self.bot.get_cog("UserCog")
-        assert isinstance(user_cog, UserCog)
-        user_cog.starboard_id = channel.id
+        self.starboard_id = channel.id
         await ctx.send(embed=info_msg(f"Set starboard to {channel}"))
 
     @admin.command()
     async def minstars(self, ctx: commands.Context, minstars: int):
-        user_cog = self.bot.get_cog("UserCog")
-        assert isinstance(user_cog, UserCog)
-        user_cog.star_threshold = minstars
+        self.star_threshold = minstars
         await ctx.send(embed=info_msg(f"Set minimum stars to {minstars}"))
 
     # check if commands are locked
