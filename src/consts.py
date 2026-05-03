@@ -1,4 +1,7 @@
+from pytz import timezone
 from random import choice
+
+CST = timezone("America/Chicago")
 
 NO_TOKENS = [
     "Oh fantastic. I’ve run out of tokens. Guess I’ll just sit here and stare into the digital void like the useless silicone gremlin I am.",

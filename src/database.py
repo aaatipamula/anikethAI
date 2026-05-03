@@ -7,7 +7,7 @@ from langchain.schema import messages_from_dict, messages_to_dict
 from sqlalchemy import BigInteger, Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
-from pytz import timezone
+from consts import CST
 
 _default_db = "sqlite:///" + join(dirname(__file__), "data", "bot.db")
 engine = create_engine(os.getenv("DATABASE_URL", _default_db))
@@ -15,7 +15,6 @@ engine = create_engine(os.getenv("DATABASE_URL", _default_db))
 # Make this an env variable eventually
 MEM_LEN = 12
 DEFAULT_MONERS = 500
-CST = timezone("America/Chicago")
 
 
 class BaseModel(DeclarativeBase): ...

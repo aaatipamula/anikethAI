@@ -7,7 +7,7 @@ from discord.ext import commands
 from openai.error import RateLimitError
 
 from chain import create_aniketh_ai
-from consts import NO_TOKENS, RANDOM_REPLYS
+from consts import NO_TOKENS, RANDOM_REPLYS, CST
 from gambling import (
     deal_cards,
     gambling_embed,
@@ -186,6 +186,7 @@ class UserCog(commands.Cog):
     async def bank(self, ctx: commands.Context):
         if not ctx.invoked_subcommand:
             reload_time, total_moners = get_user_bank_info(ctx.author.id)
+            reload_time.replace(tzinfo=CST)
             embed = bank_embed(total_moners, reload_time)
             await ctx.send(embed=embed)
 
@@ -199,6 +200,7 @@ class UserCog(commands.Cog):
             announcement_str = "# You are still ineligible to reload your account!\n"
 
         reload_time, total_moners = get_user_bank_info(ctx.author.id)
+        reload_time.replace(tzinfo=CST)
         embed = bank_embed(total_moners, reload_time)
         await ctx.send(announcement_str, embed=embed)
 
