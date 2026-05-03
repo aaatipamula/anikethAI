@@ -2,7 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 from asyncio import TimeoutError
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import feedparser
 from discord import Embed, Game, TextChannel
@@ -43,7 +43,8 @@ class AdminCog(commands.Cog):
         *,
         # NOTE: Make the following environment variables
         confirmation_emote_id: int = 1136812895859134555,  #:L_: emoji
-        rss_feeds: List[str] | None = None,
+        rss_channel_id: Optional[int] = None,
+        rss_feeds: Optional[List[str]] = None,
     ) -> None:
         self.bot = bot
         self.topic_queue = topic_queue
@@ -53,8 +54,8 @@ class AdminCog(commands.Cog):
 
         # TODO: Persist RSS feeds to database/file
         self.rss_file = rss_file
-        self.rss_feeds: List[str] = []
-        self.rss_channel_id = log_channel_id  # Default the RSS channel for now
+        self.rss_feeds: List[str] = rss_feeds or []
+        self.rss_channel_id = rss_channel_id or log_channel_id
         self.rss_last_updated = dt.datetime.now(tz=dt.timezone.utc)
         self.read_rss_file()
 

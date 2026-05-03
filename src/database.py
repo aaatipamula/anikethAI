@@ -7,6 +7,7 @@ from langchain.schema import messages_from_dict, messages_to_dict
 from sqlalchemy import BigInteger, Text, Integer, DateTime, select, update, delete, create_engine
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
+from pytz import timezone
 
 _default_db = "sqlite:///" + join(dirname(__file__), "data", "bot.db")
 engine = create_engine(os.getenv("DATABASE_URL", _default_db))
@@ -14,6 +15,7 @@ engine = create_engine(os.getenv("DATABASE_URL", _default_db))
 # Make this an env variable eventually
 MEM_LEN = 12
 DEFAULT_MONERS = 500
+CST = timezone("America/Chicago")
 
 
 class BaseModel(DeclarativeBase): ...
@@ -150,12 +152,12 @@ def reload_user_account(user_id: int) -> int:
         user_moner, user_last_reloaded = user_info
 
         # Reloaded amount is 1/2 the default loaded amount
-        if datetime.now() > user_last_reloaded + timedelta(days=1):
+        if datetime.now(tz=CST) > user_last_reloaded + timedelta(days=1):
             total_moner = user_moner + (DEFAULT_MONERS >> 1)
             stmt = (
                 update(User)
                 .where(User.id == user_id)
-                .values(moner=total_moner, last_reload=datetime.now())
+                .values(moner=total_moner, last_reload=datetime.now(tz=CST))
             )
             session.execute(stmt)
             session.commit()
