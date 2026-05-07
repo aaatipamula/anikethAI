@@ -2,7 +2,6 @@ import datetime
 import json
 import random
 from pathlib import Path
-from pytz import timezone
 from typing import List, Tuple
 
 import discord
@@ -59,9 +58,8 @@ def loop_status(
     name: str, running: bool, next_run: datetime.datetime | None
 ) -> discord.Embed:
     if next_run:
-        cst = timezone("America/Chicago")
-        next_run = next_run.astimezone(cst)
-        next_str = next_run.strftime("%A, %B %d, %I:%M:%S %p %Z")
+        ts = int(next_run.timestamp())
+        next_str = f"<t:{ts}:F> (<t:{ts}:R>)"
     else:
         next_str = None
     desc = f"**Running**: {running}\n\
@@ -103,15 +101,12 @@ def rss_embed(
 
 async def admin_dashboard(client, starttime: datetime.datetime):
     app_info = await client.application_info()
-    td = datetime.datetime.now() - starttime
-    hours = td.seconds // 3600
-    minutes = (td.seconds // 60) % 60
-    seconds = td.seconds - hours * 3600 - minutes * 60
+    ts = int(starttime.timestamp())
     desc = f"**Name**: {app_info.name}\n\
     **Owner**: {app_info.owner}\n\
     **Command Prefix**: {client.command_prefix}\n\n\
     **Latency**: {client.latency:0.2f} Seconds\n\
-    **Uptime**: `{td.days} Days {hours} Hours {minutes} Minutes {seconds} Seconds`"
+    **Started**: <t:{ts}:F> (<t:{ts}:R>)"
     a = discord.Embed(color=EMBED_COLOR, title="Admin Dashboard", description=desc)
     return a
 
@@ -135,9 +130,14 @@ def counting_err(reason: str, correct_count: int, high_score: int) -> discord.Em
 
 def bank_embed(moners: int, last_reloaded: datetime.datetime):
     next_reload_time = last_reloaded + datetime.timedelta(days=1)
-    next_reload_str = next_reload_time.strftime("%A, %B %d, %I:%M:%S %p %Z")
+    time_to_reload = next_reload_time - datetime.datetime.now(datetime.UTC)
 
-    desc = f"**Balance**: ${moners:,d}\n**Next Reload Time**: {next_reload_str}"
+    if time_to_reload <= datetime.timedelta(0):
+        reload_str = "Now!"
+    else:
+        reload_str = f"<t:{int(next_reload_time.timestamp())}:R>"
+
+    desc = f"**Balance**: ${moners:,d}\n**Next Reload**: {reload_str}"
 
     a = discord.Embed(
         title="Bank Account 💰",

@@ -244,7 +244,7 @@ class UserCog(commands.Cog):
         update_user_moner(target.id, to_user_moner)
 
         embed = info_msg(
-            f"Transfered ${amount:,d} from {ctx.author.display_name} to {target.display_name}\n"
+            f"Transfered ${amount:,d} from `{ctx.author.display_name}` to `{target.display_name}`\n"
         )
         await ctx.send(embed=embed)
 

@@ -20,7 +20,6 @@ from ext.embeds import (
     rss_embed,
 )
 from topicQueue import TopicQueue
-from users import UserCog
 from util import LowerStr
 
 UPDATE_WAIT = 4  # How long to wait in-between RSS updates
@@ -60,7 +59,7 @@ class AdminCog(commands.Cog):
         self.read_rss_file()
 
         # Set state
-        self.start_datetime = dt.datetime.now()
+        self.start_datetime = dt.datetime.now(tz=dt.timezone.utc)
         self.locked = False
 
     @property
