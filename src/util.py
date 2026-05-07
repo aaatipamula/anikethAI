@@ -115,6 +115,7 @@ def normalize_tz(timezone: str, start_hour: int):
 #  ENV Variables  #
 ###################
 
+
 def get_env(key: str) -> str:
     val = os.environ.get(key)
     if not val:

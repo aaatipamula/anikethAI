@@ -142,9 +142,7 @@ class UserCog(commands.Cog):
     @commands.command()
     async def help(self, ctx, opt="general"):
         is_owner = await self.bot.is_owner(ctx.author)
-        userHelp, adminHelp = help_command(
-            opt, ctx.prefix, self.about_me, is_owner=is_owner
-        )
+        userHelp, adminHelp = help_command(opt, self.about_me, is_owner=is_owner)
         await ctx.send(embed=userHelp)
         if adminHelp is not None:
             await ctx.send(embed=adminHelp, ephemeral=True)
@@ -175,6 +173,12 @@ class UserCog(commands.Cog):
         # Deduct moners if possible
         if gambled_amount > total_moners:
             err_msg = gambling_error("You can't gamble more than you have!")
+            await ctx.channel.send(embed=err_msg)
+            return
+
+        # No negative gambled amounts
+        if gambled_amount < 0:
+            err_msg = gambling_error("You can't gamble negative amounts!")
             await ctx.channel.send(embed=err_msg)
             return
 
@@ -220,6 +224,29 @@ class UserCog(commands.Cog):
         reload_time, total_moners = get_user_bank_info(ctx.author.id)
         embed = bank_embed(total_moners, self.localize_dt(reload_time))
         await ctx.send(announcement_str, embed=embed)
+
+    @bank.command(name="transfer")
+    async def transfer_amount(self, ctx: commands.Context, amount: int, target: Member):
+        from_user_moner = get_user_moner(ctx.author.id)
+
+        if amount > from_user_moner:
+            await ctx.send(embed=cmd_error("You cannot transfer more than you have!"))
+            return
+
+        # No negative transfered amounts amounts
+        if amount < 0:
+            err_msg = cmd_error("You can't gamble negative amounts!")
+            await ctx.channel.send(embed=err_msg)
+            return
+
+        to_user_moner = get_user_moner(target.id)
+        to_user_moner += amount
+        update_user_moner(target.id, to_user_moner)
+
+        embed = info_msg(
+            f"Transfered ${amount:,d} from {ctx.author.display_name} to {target.display_name}\n"
+        )
+        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):

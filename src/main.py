@@ -63,11 +63,7 @@ client = commands.Bot(
 
 # Create cogs
 admin_cog = AdminCog(
-    client,
-    GLOBAL_QUEUE,
-    DUMP_CHANNEL,
-    RSS_FILE,
-    rss_channel_id=RSS_CHANNEL
+    client, GLOBAL_QUEUE, DUMP_CHANNEL, RSS_FILE, rss_channel_id=RSS_CHANNEL
 )
 user_cog = UserCog(
     client,

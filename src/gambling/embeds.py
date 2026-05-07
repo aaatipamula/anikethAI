@@ -83,7 +83,9 @@ def gambling_embed(
         )
 
     if total_moners <= 0:
-        a.set_footer(text=f"Balance: {total_moners} (Reload with `{COMMAND_PREFIX}bank reload`)")
+        a.set_footer(
+            text=f"Balance: {total_moners} (Reload with `{COMMAND_PREFIX}bank reload`)"
+        )
     else:
         a.set_footer(text=f"Balance: {total_moners}")
 

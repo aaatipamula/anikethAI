@@ -4,7 +4,16 @@ from datetime import datetime, timedelta, UTC
 from os.path import join, dirname
 from langchain.memory import ConversationBufferWindowMemory, ChatMessageHistory
 from langchain.schema import messages_from_dict, messages_to_dict
-from sqlalchemy import BigInteger, Text, Integer, DateTime, select, update, delete, create_engine
+from sqlalchemy import (
+    BigInteger,
+    Text,
+    Integer,
+    DateTime,
+    select,
+    update,
+    delete,
+    create_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, mapped_column, Session, Mapped
 from discord.ext.commands import CommandError
 
@@ -127,6 +136,13 @@ def get_user_moner(user_id: int) -> int:
         if result is None:
             create_user(session, user_id)
     return result[0] if result else DEFAULT_MONERS
+
+
+def get_all_user_moner():
+    stmt = select(User.id, User.moner).order_by(User.moner.desc()).limit(10)
+    with Session(engine) as session:
+        result = session.execute(stmt).fetchall()
+    return result
 
 
 def update_user_moner(user_id: int, amount: int) -> None:
